@@ -11,7 +11,7 @@
         <%- include('header.ejs', {top: 1})%> 
         <div class="content">
             <div class="header-content">Настройте ваши фильтры</div>
-            <div class="create">Создать фильтр</div>
+            <div class="create filter-create">Создать фильтр</div>
             <div class="filtres-list list">
                 <div class="header-list">Доступные фильтры</div>
                 <div class="filtres-list-item list-item">
@@ -38,6 +38,214 @@
             </div>
         </div>
     </div>
+    <div class="create-filter-popup">
+        <div class="create-filter-popup-wrap">
+            <div class="close-popup close-popup-btn">Закрыть</div>
+            <div class="column-create start-setting">
+                <div class="name-filter filter-text">Название фильтра</div>
+                <input type="text" name="name">
+                <div class="type-filter filter-text">Вид спорта</div>
+                <select class="sport">
+                    <option value="none">Не выбрано</option>
+                    <option value="basketball">Баскетбол</option>
+                    <option value="volleyball">Волейбол</option>
+                    <option value="tennis">Теннис</option>
+                </select>
+                <div class="type-filter filter-text">Пол спортсменов</div>
+                <select class="gender">
+                    <option value="male">Мужской</option>
+                    <option value="female">Женский</option>
+                </select>
+                <div class="age-filter filter-text">Возраст</div>
+                <input type="text" name="age">
+                <div class="channel-filter filter-text">Каналы</div>
+                <input type="checkbox" id="channel">
+                <label for="channel">Какой-то канал</label>
+                <div class="status-filter filter-text">Статус после создания</div>
+                <select class="status">
+                    <option value="active">Активирован</option>
+                    <option value="inactive">Деактивирован</option>
+                </select>
+            </div>
+            <div class="column-create sport-setting">
+                <div class="line-scrap">
+                    <div class="scrap-item">
+                        <div class="filter-text difference line-scrap-item-name">Разница коофициентов на победу</div>
+                        <span class="filter-text">От : </span> <input type="text" class="small-input" id="difference-from">
+                        <span class="filter-text">До : </span> <input type="text" class="small-input" id="difference-to">
+                    </div>
+                    <div class="scrap-item">
+                        <div class="filter-text fora line-scrap-item-name">Фора</div>
+                        <span class="filter-text">От : </span> <input type="text" class="small-input" id="fora-from">
+                        <span class="filter-text">До : </span> <input type="text" class="small-input" id="fora-to">
+                    </div>
+                    <div class="scrap-item">
+                        <div class="filter-text total line-scrap-item-name">Тотал</div>
+                        <span class="filter-text">От : </span> <input type="text" class="small-input" id="total-from">
+                        <span class="filter-text">До : </span> <input type="text" class="small-input" id="total-to">
+                    </div>
+                </div>
+                <div class="live-scrap">
+                    <div class="live-scrap-basketball">
+                        <div class="scrap-item">
+                            <div class="filter-text score line-scrap-item-name">Счёт в текущей четверти</div>
+                            <span class="filter-text">От : </span> <input type="text" class="small-input" id="score-from">
+                            <span class="filter-text">До : </span> <input type="text" class="small-input" id="score-to">
+                        </div>
+                        <div class="scrap-item">
+                            <div class="filter-text number-quarters line-scrap-item-name">Номер четверти</div>
+                            <span class="filter-text">От : </span> <input type="text" class="small-input" id="number-quarters-from">
+                            <span class="filter-text">До : </span> <input type="text" class="small-input" id="number-quarters-to">
+                        </div>
+                        <div class="scrap-item">
+                            <div class="filter-text score-quarters line-scrap-item-name">Счёт по четвертям</div>
+                            <span class="filter-text">От : </span> <input type="text" class="small-input" id="score-quarters-from">
+                            <span class="filter-text">До : </span> <input type="text" class="small-input" id="score-quarters-to">
+                        </div>
+                        <div class="scrap-item">
+                            <div class="filter-text current-total line-scrap-item-name">Текущий тотал</div>
+                            <span class="filter-text">От : </span> <input type="text" class="small-input" id="current-total-from">
+                            <span class="filter-text">До : </span> <input type="text" class="small-input" id="current-total-to">
+                        </div>
+                        <div class="scrap-item">
+                            <div class="filter-text overall-total line-scrap-item-name">Общий средний тотал</div>
+                            <span class="filter-text">От : </span> <input type="text" class="small-input" id="overall-total-from">
+                            <span class="filter-text">До : </span> <input type="text" class="small-input" id="overall-total-to">
+                        </div>
+                        <div class="scrap-item">
+                            <div class="filter-text current-fora line-scrap-item-name">Текущая фора</div>
+                            <span class="filter-text">От : </span> <input type="text" class="small-input" id="current-fora-from">
+                            <span class="filter-text">До : </span> <input type="text" class="small-input" id="current-fora-to">
+                        </div>
+                        <div class="scrap-item">
+                            <div class="filter-text time-quarters line-scrap-item-name">Время четверти в минутах и секундах (формат - мм:сс)</div>
+                            <span class="filter-text">От : </span> <input type="text" class="small-input" id="time-quarters-from">
+                            <span class="filter-text">До : </span> <input type="text" class="small-input" id="time-quarters-to">
+                        </div>
+                        <div class="scrap-item">
+                            <div class="filter-text remained-total line-scrap-item-name">Осталось набрать Тотал</div>
+                            <span class="filter-text">От : </span> <input type="text" class="small-input" id="remained-total-from">
+                            <span class="filter-text">До : </span> <input type="text" class="small-input" id="remained-total-to">
+                        </div>
+                        <div class="scrap-item">
+                            <div class="filter-text remained-fora line-scrap-item-name">Осталось набрать Фора</div>
+                            <span class="filter-text">От : </span> <input type="text" class="small-input" id="remained-fora-from">
+                            <span class="filter-text">До : </span> <input type="text" class="small-input" id="remained-fora-to">
+                        </div>
+                        <div class="scrap-item">
+                            <div class="filter-text folls line-scrap-item-name">Фолы текущей четверти</div>
+                            <span class="filter-text">От : </span> <input type="text" class="small-input" id="folls-from">
+                            <span class="filter-text">До : </span> <input type="text" class="small-input" id="folls-to">
+                        </div>
+                        <div class="scrap-item">
+                            <div class="filter-text hits line-scrap-item-name">Процент попадания общ.</div>
+                            <span class="filter-text">От : </span> <input type="text" class="small-input" id="fhitsolls-from">
+                            <span class="filter-text">До : </span> <input type="text" class="small-input" id="hits-to">
+                        </div>
+                    </div>
+                    <div class="live-scrap-volleyball">
+                        <div class="scrap-item">
+                            <div class="filter-text score line-scrap-item-name">Счёт в текущем сете</div>
+                            <span class="filter-text">От : </span> <input type="text" class="small-input" id="score-from">
+                            <span class="filter-text">До : </span> <input type="text" class="small-input" id="score-to">
+                        </div>
+                        <div class="scrap-item">
+                            <div class="filter-text number-quarters line-scrap-item-name">Сет</div>
+                            <span class="filter-text">От : </span> <input type="text" class="small-input" id="number-quarters-from">
+                            <span class="filter-text">До : </span> <input type="text" class="small-input" id="number-quarters-to">
+                        </div>
+                        <div class="scrap-item">
+                            <div class="filter-text score-quarters line-scrap-item-name">Счёт по сетам</div>
+                            <span class="filter-text">От : </span> <input type="text" class="small-input" id="score-quarters-from">
+                            <span class="filter-text">До : </span> <input type="text" class="small-input" id="score-quarters-to">
+                        </div>
+                        <div class="scrap-item">
+                            <div class="filter-text current-total line-scrap-item-name">Текущий тотал</div>
+                            <span class="filter-text">От : </span> <input type="text" class="small-input" id="current-total-from">
+                            <span class="filter-text">До : </span> <input type="text" class="small-input" id="current-total-to">
+                        </div>
+                        <div class="scrap-item">
+                            <div class="filter-text overall-total line-scrap-item-name">Общий тотал</div>
+                            <span class="filter-text">От : </span> <input type="text" class="small-input" id="overall-total-from">
+                            <span class="filter-text">До : </span> <input type="text" class="small-input" id="overall-total-to">
+                        </div>
+                        <div class="scrap-item">
+                            <div class="filter-text supply line-scrap-item-name">На своих подачах</div>
+                            <span class="filter-text">От : </span> <input type="text" class="small-input" id="supply-from">
+                            <span class="filter-text">До : </span> <input type="text" class="small-input" id="supply-to">
+                        </div>
+                        <div class="scrap-item">
+                            <div class="filter-text contract-supply line-scrap-item-name">Подряд на своих</div>
+                            <span class="filter-text">От : </span> <input type="text" class="small-input" id="contract-supply-from">
+                            <span class="filter-text">До : </span> <input type="text" class="small-input" id="contract-supply-to">
+                        </div>
+                        <div class="scrap-item">
+                            <div class="filter-text remained-total line-scrap-item-name">Осталось набрать Тотал</div>
+                            <span class="filter-text">От : </span> <input type="text" class="small-input" id="remained-total-from">
+                            <span class="filter-text">До : </span> <input type="text" class="small-input" id="remained-total-to">
+                        </div>
+                        <div class="scrap-item">
+                            <div class="filter-text remained-fora line-scrap-item-name">Осталось набрать Фора</div>
+                            <span class="filter-text">От : </span> <input type="text" class="small-input" id="remained-fora-from">
+                            <span class="filter-text">До : </span> <input type="text" class="small-input" id="remained-fora-to">
+                        </div>
+                    </div>
+                    <div class="live-scrap-tennis">
+                        <div class="scrap-item">
+                            <div class="filter-text score line-scrap-item-name">Счёт в текущем сете</div>
+                            <span class="filter-text">От : </span> <input type="text" class="small-input" id="score-from">
+                            <span class="filter-text">До : </span> <input type="text" class="small-input" id="score-to">
+                        </div>
+                        <div class="scrap-item">
+                            <div class="filter-text number-quarters line-scrap-item-name">Сет</div>
+                            <span class="filter-text">От : </span> <input type="text" class="small-input" id="number-quarters-from">
+                            <span class="filter-text">До : </span> <input type="text" class="small-input" id="number-quarters-to">
+                        </div>
+                        <div class="scrap-item">
+                            <div class="filter-text score-quarters line-scrap-item-name">Счёт по сетам</div>
+                            <span class="filter-text">От : </span> <input type="text" class="small-input" id="score-quarters-from">
+                            <span class="filter-text">До : </span> <input type="text" class="small-input" id="score-quarters-to">
+                        </div>
+                        <div class="scrap-item">
+                            <div class="filter-text current-total line-scrap-item-name">Текущий тотал</div>
+                            <span class="filter-text">От : </span> <input type="text" class="small-input" id="current-total-from">
+                            <span class="filter-text">До : </span> <input type="text" class="small-input" id="current-total-to">
+                        </div>
+                        <div class="scrap-item">
+                            <div class="filter-text remained line-scrap-item-name">Осталось набрать</div>
+                            <span class="filter-text">От : </span> <input type="text" class="small-input" id="remained-from">
+                            <span class="filter-text">До : </span> <input type="text" class="small-input" id="remained-to">
+                        </div>
+                        <div class="scrap-item">
+                            <div class="filter-text ice line-scrap-item-name">Эйсы</div>
+                            <span class="filter-text">От : </span> <input type="text" class="small-input" id="ice-from">
+                            <span class="filter-text">До : </span> <input type="text" class="small-input" id="ice-to">
+                        </div>
+                        <div class="scrap-item">
+                            <div class="filter-text errors line-scrap-item-name">Двойные ошибки</div>
+                            <span class="filter-text">От : </span> <input type="text" class="small-input" id="errors-from">
+                            <span class="filter-text">До : </span> <input type="text" class="small-input" id="errors-to">
+                        </div>
+                        <div class="scrap-item">
+                            <div class="filter-text percent line-scrap-item-name">Процент выйграных очков в первой подаче</div>
+                            <span class="filter-text">От : </span> <input type="text" class="small-input" id="percent-from">
+                            <span class="filter-text">До : </span> <input type="text" class="small-input" id="percent-to">
+                        </div>
+                        <div class="scrap-item">
+                            <div class="filter-text break line-scrap-item-name">Реализация брейкпоинтов</div>
+                            <span class="filter-text">От : </span> <input type="text" class="small-input" id="break-from">
+                            <span class="filter-text">До : </span> <input type="text" class="small-input" id="break-to">
+                        </div>
+                    </div>
+                </div>
 
+            </div>
+            <div class="nav-btns">
+                <div class="button save">Создать</div>
+                <div class="button cancel close-popup-btn">Отмена</div>
+            </div>
+        </div>
+    </div>
+    <script src="js/filter.js"></script>
 </body>
 </html>

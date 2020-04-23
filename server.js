@@ -1,12 +1,12 @@
 const express = require('express');
 const cron = require('node-cron');
 const puppeteer = require('puppeteer');
- 
+
 cron.schedule('*/1 * * * *', () => {
   	console.log('Прошла минута')
 });
 // const multer = require('multer');
-// const mongoose = require('mongoose');
+const mongoose = require('mongoose');
 // const { base64encode, base64decode } = require('nodejs-base64');
 // const btoa = require('btoa');
 // const path = require('path');
@@ -20,8 +20,8 @@ async function start(){
 		app.listen(PORT, () => {
 			console.log('Server has been started...');
 		});
-		// await mongoose.connect('mongodb+srv://olendeer:1029384756qazqwertyuiop@multilanding-rqsma.gcp.mongodb.net/Multilanding?retryWrites=true&w=majority', {useNewUrlParser: true, useUnifiedTopology: true});
-		// console.log('Set connetion to data base');
+		await mongoose.connect('mongodb+srv://olendeer:1029384756qazqwertyuiop@scraper-7vfov.mongodb.net/test?retryWrites=true&w=majority', {useNewUrlParser: true, useUnifiedTopology: true});
+		console.log('Set connetion to data base');
 	}catch(e){
 		console.log(e)
 		console.log('Not connetion!')
@@ -34,21 +34,111 @@ app.set('view engine', 'ejs');
 app.use(express.static('public'));
 
 
+// let rounded = function(number){
+//     return +number.toFixed(2);
+// }
+
+
+
+
+async function scrapBasketball(){
+	const browser = await puppeteer.launch({headless: false});
+	const page = await browser.newPage();
+	await page.goto('https://betcityru.com/ru/line/bets?sp%5B%5D=3');
+	await page.waitFor(5000);
+	const result = await page.evaluate(() => {
+		let findEvents = [];
+		let events = document.querySelectorAll('app-line-event-unit');
+		events.forEach(async event => {
+			let players = [];
+			let findEvent = {
+				players:[],
+				coefficient : 0,
+				fora : 0,
+				total: 0
+			};
+			//Поиск имён команд
+			players = event.querySelectorAll('.line-event__name-teams b');
+			players.forEach(player => {
+				findEvent.players.push(player.innerHTML);
+			})
+			//Поиск форы
+			let fora = event.querySelectorAll('.line-event__main-bets-button_left');
+			findEvent.fora = fora[0].innerHTML + ' / ' + fora[1].innerHTML;
+			//Поиск Тотал
+			findEvent.total = fora[2].innerHTML;
+			//Поиск коеффициента
+			let coefficients = event.querySelectorAll('.line-event__main-bets-button_colored');
+			if(coefficients.length != null){
+				
+				findEvent.coefficient = +coefficients[0].innerHTML - +coefficients[1].innerHTML;
+				if(findEvent.coefficient < 0){
+					findEvent.coefficient = -findEvent.coefficient;
+				}
+				findEvent.coefficient = +findEvent.coefficient.toFixed(2);
+			}
+			//Добавление ивента в массив
+			findEvents.push(findEvent);
+		});
+
+		// lineMatchs.forEach(lineMatch => {
+		// 	koefDifs = [];
+		// 	let koefDif;
+		// 	lineMatch = lineMatch.querySelectorAll('.line-event__main-bets-button_colored');
+		// 	if(lineMatch.length != 0){
+		// 		koefDif = +lineMatch[0].innerHTML - +lineMatch[1].innerHTML;
+		// 		resultLineMatchs.push(koefDifs);
+		// 	}
+		// });
+        return findEvents;
+
+	});
+	browser.close();
+ 	return result;
+}
+
+
+
+
+async function scrapVolleyball(){
+	const browser = await puppeteer.launch({headless: false});
+	const page = await browser.newPage();
+	await page.goto('https://betcityru.com/ru/line/bets?sp%5B%5D=12');
+	await page.waitFor(5000);
+}
+async function scrapTennis(){
+	const browser = await puppeteer.launch({headless: false});
+	const page = await browser.newPage();
+	await page.goto('https://betcityru.com/ru/line/bets?sp%5B%5D=2');
+	await page.waitFor(5000);
+}
 
 
 // async function scrapping(){
 // 	const browser = await puppeteer.launch({headless: false});
 // 	const page = await browser.newPage();
-// 	await page.goto('https://betcityru.com/ru');
-// 	await page.waitFor(1000);
+// 	await page.goto('https://betcityru.com/ru/line/bets?line_ids%5B%5D=2&line_ids%5B%5D=3&line_ids%5B%5D=12&sp%5B%5D=3&sp%5B%5D=12&sp%5B%5D=2');
+// 	await page.waitFor(5000);
 
 // 	const result = await page.evaluate(() => {
-//         let title = document.querySelector('.menu__item[_ngcontent-desktop-ng-cli-c10]').innerText;
-//         // let price = document.querySelector('.price_color').innerText;
+// 		let resultLineMatchs = [];
+// 		let koefDifs = [];
+// 		let lineMatchs = document.querySelectorAll('.line-event__main-bets');
+// 		lineMatchs.forEach(lineMatch => {
+// 			koefDifs = [];
+// 			lineMatch.querySelectorAll('.line-event__main-bets-button_colored').forEach(koefDif => {
+// 				koefDifs.push(koefDif.innerHTML);
+// 			})
+// 			if(koefDifs.length != 0){
+// 				resultLineMatchs.push(koefDifs);
+// 			}
+// 			// resultKoefDifs.push(element.innerHTML);
+// 		});
 
-//         return {
-//             title
-//         }
+// 		// console.log(test);
+//         // let price = document.querySelector('.price_color').innerText;
+		
+//         return resultLineMatchs;
 
 //     });
 
@@ -57,9 +147,24 @@ app.use(express.static('public'));
 //  	return result;
 // }
 
-// scrapping().then(result => {
-// 	console.log(result);
-// })
+async function scrapping(filters){
+	if(filters.basketball != null){
+		return await scrapBasketball();
+	}
+}
+
+
+let filters = {
+	basketball: {
+
+	},
+	vollayball: null,
+	tennis:null
+}
+
+scrapping(filters).then(result => {
+	console.log(result);
+})
 
 
 

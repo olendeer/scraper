@@ -139,3 +139,151 @@ body{
       background-color: rgba(#000, .1);
     }
   }
+
+.create-filter-popup{
+  width: 100vw;
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  background-color: rgba(#000, .5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  .create-filter-popup-wrap{
+    padding: 10px;
+    height: 90%;
+    width: 90%;
+    background-color: #fff;
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    .close-popup{
+      position: absolute;
+      right: 15px;
+      top: 15px;
+      font-weight: 600;
+      font-size: 0.8rem;
+      color: #2f2f2f;
+      cursor: pointer;
+      transition-duration: .3s;
+      &:hover{
+        color: #f50057;
+      }
+    }
+  }
+}
+.column-create{
+  height: 100%;
+  width: 30%;
+  padding: 0px 10px;
+  min-width: 400px;
+}
+.start-setting{
+  box-sizing: border-box;
+  border-right: 1px solid rgba(#2f2f2f, .2);
+}
+
+.filter-text{
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: #2f2f2f;
+  margin-top: 15px;
+  margin-bottom: 15px;
+}
+
+input{
+  font-weight: 600;
+  font-size: 0.7rem;
+  color: #2f2f2f;
+  outline: none;
+  border: none;
+  box-sizing: border-box;
+  padding: 5px 10px;
+  border-bottom: 1px solid rgba(#2f2f2f, .5);
+}
+
+select{
+  cursor: pointer;
+  width: 150px;
+  font-weight: 600;
+  font-size: 0.7rem;
+  color: #2f2f2f;
+  padding: 5px 10px;
+  position: relative;
+  outline: none;
+}
+label{
+  cursor: pointer;
+}
+.small-input{
+  width: 60px;
+  height: 33px;
+  padding-top: 0px;
+  padding-bottom: 0px;
+  font-size: 0.8rem;
+}
+
+.line-scrap{
+  margin-bottom: 30px;
+}
+
+.scrap-item{
+  display: flex;
+}
+
+.line-scrap-item-name{
+  margin-right: 10px;
+  width: 220px;
+}
+.sport-setting{
+  display: none;
+}
+.live-scrap-basketball{
+  display: none;
+}
+.live-scrap-volleyball{
+  display: none;
+}
+.live-scrap-tennis{
+  display: none;
+}
+.nav-btns{
+  position: absolute;
+  display: flex;
+  bottom: 15px;
+  right: 15px;
+  .button{
+    width: 140px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #fff;
+    transition-duration: .3s;
+    box-sizing: border-box;
+    border: 2px solid  transparent;
+  }
+  .save{
+    background-color: #639a67;
+    margin-right: 10px;
+    &:hover{
+      color: #639a67;
+      background-color: #fff;
+      border: 2px solid #639a67;
+    }
+  }
+  .cancel{
+    background-color: #f50057;
+    &:hover{
+      color: #f50057;
+      background-color: #fff;
+      border: 2px solid #f50057;
+    }
+  }
+}
