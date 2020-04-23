@@ -1,0 +1,145 @@
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  font-family: sans-serif;
+}
+
+.wrapper {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+}
+.wrapper .content {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+}
+.wrapper .content .header-content {
+  margin-bottom: 15px;
+  font-weight: 600;
+}
+.wrapper .content .create {
+  width: 170px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2f2f2f;
+  font-size: 0.7rem;
+  font-weight: 600;
+  box-sizing: border-box;
+  border: 2px dashed #f50057;
+  cursor: pointer;
+  transition-duration: 0.3s;
+  margin-bottom: 25px;
+}
+.wrapper .content .create:hover {
+  border: 2px solid #f50057;
+  background-color: #f50057;
+  color: #fff;
+}
+
+.list {
+  width: 100%;
+  box-sizing: border-box;
+  border-top: 1px solid rgba(47, 47, 47, 0.1);
+}
+.list .header-list {
+  margin-bottom: 15px;
+  margin-top: 25px;
+  font-weight: 600;
+  font-size: 0.6rem;
+}
+.list .list-item {
+  box-sizing: border-box;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  border-top: 1px solid rgba(245, 0, 87, 0.1);
+  border-bottom: 1px solid rgba(245, 0, 87, 0.1);
+  margin-bottom: 5px;
+}
+.list .list-item .list-item-nav {
+  display: flex;
+  align-self: flex-end;
+}
+.list .list-item .list-item-nav .button {
+  width: 140px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #fff;
+  transition-duration: 0.3s;
+  box-sizing: border-box;
+  border: 2px solid transparent;
+}
+.list .list-item .list-item-nav .activate {
+  background-color: #639a67;
+}
+.list .list-item .list-item-nav .activate:hover {
+  color: #639a67;
+  background-color: #fff;
+  border: 2px solid #639a67;
+}
+.list .list-item .list-item-nav .edit {
+  background-color: #00a8cc;
+  margin-right: 10px;
+  margin-left: 10px;
+}
+.list .list-item .list-item-nav .edit:hover {
+  color: #00a8cc;
+  background-color: #fff;
+  border: 2px solid #00a8cc;
+}
+.list .list-item .list-item-nav .delete {
+  background-color: #f50057;
+}
+.list .list-item .list-item-nav .delete:hover {
+  color: #f50057;
+  background-color: #fff;
+  border: 2px solid #f50057;
+}
+
+.nav {
+  min-width: 200px;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.roller-nav {
+  position: absolute;
+  transition-duration: 0.3s;
+  right: -1px;
+  top: 0;
+  width: 2px;
+  height: 50px;
+  background-color: #f50057;
+}
+
+.link-nav {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  text-decoration: none;
+  color: #2f2f2f;
+  font-size: 0.75rem;
+  width: 100%;
+  height: 50px;
+  box-sizing: border-box;
+  padding: 0px 30px;
+  cursor: pointer;
+  transition-duration: 0.3s;
+}
+.link-nav:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
