@@ -60,14 +60,31 @@ body {
   padding-bottom: 10px;
   width: 100%;
   display: flex;
-  justify-content: flex-end;
+  flex-direction: column;
+  justify-content: flex-start;
   border-top: 1px solid rgba(245, 0, 87, 0.1);
   border-bottom: 1px solid rgba(245, 0, 87, 0.1);
   margin-bottom: 5px;
+  padding-left: 10px;
+  position: relative;
+  min-height: 100px;
+}
+.list .list-item .filter-name {
+  color: #2f2f2f;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.list .list-item .filter-sport {
+  margin-top: 10px;
+  color: #2f2f2f;
+  font-size: 0.9rem;
 }
 .list .list-item .list-item-nav {
   display: flex;
   align-self: flex-end;
+  position: absolute;
+  bottom: 10px;
+  right: 0px;
 }
 .list .list-item .list-item-nav .button {
   width: 140px;
@@ -90,6 +107,14 @@ body {
   color: #639a67;
   background-color: #fff;
   border: 2px solid #639a67;
+}
+.list .list-item .list-item-nav .inactivate {
+  background-color: #dbdbdb;
+  color: #2f2f2f;
+}
+.list .list-item .list-item-nav .inactivate:hover {
+  background-color: #f50057;
+  color: #fff;
 }
 .list .list-item .list-item-nav .edit {
   background-color: #00a8cc;
@@ -152,7 +177,7 @@ body {
   left: 0;
   z-index: 1;
   background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: center;
 }

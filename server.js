@@ -1,12 +1,79 @@
 const express = require('express');
 const cron = require('node-cron');
 const puppeteer = require('puppeteer');
+const date = require('date-and-time');
+const mongoose = require('mongoose');
 
 cron.schedule('*/1 * * * *', () => {
-  	console.log('Прошла минута')
+	FilterItem.find()
+	.then(filters => {
+		if(filters.length > 0){
+			console.log('Start scraper')
+			// scrapping(filters).then(result => {
+			// 	console.log(result);
+			// })
+			filtration(filters);
+		}
+		else{
+			console.log('Filters not found')
+			return false;
+		}
+	})
 });
+
+async function filtration(filters){
+	filters.forEach(filter => {
+		if(filter.status == 'active'){
+			if(filter.sport == 'basketball'){
+				scrapSport('https://betcityru.com/ru/line/bets?sp%5B%5D=3&ts=1')
+				.then(result => {
+					// console.log(result)
+					saveResults(filter, result)
+				})
+			}
+			else if(filter.sport == 'volleyball'){
+				scrapSport('https://betcityru.com/ru/line/bets?sp%5B%5D=12&ts=1')
+				.then(result => {
+					// console.log(result)
+					saveResults(filter, result)
+				})
+			}
+			else if(filter.sport == 'tennis'){
+				scrapSport('https://betcityru.com/ru/line/bets?sp%5B%5D=2&ts=1')
+				.then(result => {
+					// console.log(result)
+					saveResults(filter, result)
+				})
+			}
+		}
+	})
+	return false;
+}
+
+
+
+async function saveResults(filter, result){
+	let results = [];
+	let error = false;
+	result.forEach(event => {
+		error = false;
+		// if(event.coefficient < filter.difference[0] || event.coefficient > filter.difference[1]){
+		// 	error = true;
+		// }
+		// else if(event.fora < filter.fora[0] || event.fora > filter.fora[1]){
+		// 	error = true;
+		// }
+		// else if(event.total < filter.total[0] || event.fora > filter.total[1]){
+		// 	error = true;
+		// }
+		if(error == false){
+			results.push(event);
+		}
+	})
+	console.log(results);
+}
+
 // const multer = require('multer');
-const mongoose = require('mongoose');
 // const { base64encode, base64decode } = require('nodejs-base64');
 // const btoa = require('btoa');
 // const path = require('path');
@@ -28,48 +95,46 @@ async function start(){
 	}
 }
 
-start();
-
+start(); 
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
 
-
-// let rounded = function(number){
-//     return +number.toFixed(2);
-// }
-
-
-
-
-async function scrapBasketball(){
+async function scrapSport(url){
 	const browser = await puppeteer.launch({headless: false});
 	const page = await browser.newPage();
-	await page.goto('https://betcityru.com/ru/line/bets?sp%5B%5D=3');
+	await page.goto(url);
 	await page.waitFor(5000);
-	const result = await page.evaluate(() => {
+	let result = await page.evaluate(() => {
 		let findEvents = [];
 		let events = document.querySelectorAll('app-line-event-unit');
+		console.log(events)
 		events.forEach(async event => {
 			let players = [];
 			let findEvent = {
+				time: 0,
 				players:[],
 				coefficient : 0,
 				fora : 0,
 				total: 0
 			};
 			//Поиск имён команд
+			findEvent.time = event.querySelector('.line-event__time-static_large').innerHTML.trim()
+
 			players = event.querySelectorAll('.line-event__name-teams b');
 			players.forEach(player => {
 				findEvent.players.push(player.innerHTML);
 			})
 			//Поиск форы
 			let fora = event.querySelectorAll('.line-event__main-bets-button_left');
-			findEvent.fora = fora[0].innerHTML + ' / ' + fora[1].innerHTML;
+			findEvent.fora = +fora[0].innerHTML;
+			if(findEvent.fora < 0){
+				findEvent.fora = -findEvent.fora;
+			}
 			//Поиск Тотал
-			findEvent.total = fora[2].innerHTML;
+			findEvent.total = +fora[2].innerHTML;
 			//Поиск коеффициента
 			let coefficients = event.querySelectorAll('.line-event__main-bets-button_colored');
-			if(coefficients.length != null){
+			if(coefficients.length > 0 ){
 				
 				findEvent.coefficient = +coefficients[0].innerHTML - +coefficients[1].innerHTML;
 				if(findEvent.coefficient < 0){
@@ -80,23 +145,67 @@ async function scrapBasketball(){
 			//Добавление ивента в массив
 			findEvents.push(findEvent);
 		});
-
-		// lineMatchs.forEach(lineMatch => {
-		// 	koefDifs = [];
-		// 	let koefDif;
-		// 	lineMatch = lineMatch.querySelectorAll('.line-event__main-bets-button_colored');
-		// 	if(lineMatch.length != 0){
-		// 		koefDif = +lineMatch[0].innerHTML - +lineMatch[1].innerHTML;
-		// 		resultLineMatchs.push(koefDifs);
-		// 	}
-		// });
         return findEvents;
 
 	});
+	let thisTime = date.format(new Date(), 'HH:mm');
+	result = result.filter(event => {
+		event.time = countTime(thisTime, event.time)
+		if(event.time < 30){
+			return event;
+		}
+	})
 	browser.close();
  	return result;
 }
 
+function countTime(thisTime, startEventTime){
+	let thisTimeHours;
+	let thisTimeMinutes;
+	let thisTimeSeconds;
+
+	let startEventTimeHours;
+	let startEventTimeMinutes;
+	let startEventTimeSeconds;
+
+	let resultCountTime;
+	if(thisTime.split(':')[0] == '00'){
+		thisTimeHours = 24;
+	}
+	else{
+		thisTimeHours = +thisTime.split(':')[0];
+	}
+	if(thisTime.split(':')[1] == '00'){
+		thisTimeMinutes = 60;
+		thisTimeHours -= 1;
+	}
+	else{
+		thisTimeMinutes = +thisTime.split(':')[1];
+	}
+	thisTimeSeconds = ((60 * 60) * thisTimeHours) + (60 * thisTimeMinutes);
+
+	if(startEventTime.split(':')[0] == '00'){
+		startEventTimeHours = 24;
+	}
+	else{
+		startEventTimeHours = +startEventTime.split(':')[0];
+	}
+	if(startEventTime.split(':')[1] == '00'){
+		startEventTimeMinutes = 60;
+		startEventTimeHours -= 1;
+	}
+	else{
+		startEventTimeMinutes = +startEventTime.split(':')[1];
+	}
+	startEventTimeSeconds = ((60 * 60) * startEventTimeHours) + (60 * startEventTimeMinutes);
+
+
+	resultCountTime = (startEventTimeSeconds - thisTimeSeconds) / 60;
+
+
+
+	return resultCountTime;
+}
 
 
 
@@ -114,57 +223,13 @@ async function scrapTennis(){
 }
 
 
-// async function scrapping(){
-// 	const browser = await puppeteer.launch({headless: false});
-// 	const page = await browser.newPage();
-// 	await page.goto('https://betcityru.com/ru/line/bets?line_ids%5B%5D=2&line_ids%5B%5D=3&line_ids%5B%5D=12&sp%5B%5D=3&sp%5B%5D=12&sp%5B%5D=2');
-// 	await page.waitFor(5000);
-
-// 	const result = await page.evaluate(() => {
-// 		let resultLineMatchs = [];
-// 		let koefDifs = [];
-// 		let lineMatchs = document.querySelectorAll('.line-event__main-bets');
-// 		lineMatchs.forEach(lineMatch => {
-// 			koefDifs = [];
-// 			lineMatch.querySelectorAll('.line-event__main-bets-button_colored').forEach(koefDif => {
-// 				koefDifs.push(koefDif.innerHTML);
-// 			})
-// 			if(koefDifs.length != 0){
-// 				resultLineMatchs.push(koefDifs);
-// 			}
-// 			// resultKoefDifs.push(element.innerHTML);
-// 		});
-
-// 		// console.log(test);
-//         // let price = document.querySelector('.price_color').innerText;
-		
-//         return resultLineMatchs;
-
-//     });
-
-
-// 	browser.close();
-//  	return result;
-// }
-
 async function scrapping(filters){
-	if(filters.basketball != null){
+	// if(filters.basketball != null){
 		return await scrapBasketball();
-	}
+	// }
 }
 
 
-let filters = {
-	basketball: {
-
-	},
-	vollayball: null,
-	tennis:null
-}
-
-scrapping(filters).then(result => {
-	console.log(result);
-})
 
 
 
@@ -172,22 +237,24 @@ scrapping(filters).then(result => {
 
 
 
-
-// var Schema = mongoose.Schema({
-//     styles: Array,
-//     configElements: Array,
-// 	logo: Array,
-// 	favicon: String,
-// 	backgroundImage: String,
-// 	type: String,
-// 	typeLogo: String,
-// 	title: String,
-// 	metaTitle: String,
-// 	metaDescription: String,
-// 	domain: String,
-// 	name: String
-// });
-// const Landing = mongoose.model('Landing', Schema);
+let Filter = mongoose.Schema({
+	name: String,
+	sport: String,
+    difference: Array,
+    fora: Array,
+	total: Array,
+	status: String
+	// favicon: String,
+	// backgroundImage: String,
+	// type: String,
+	// typeLogo: String,
+	// title: String,
+	// metaTitle: String,
+	// metaDescription: String,
+	// domain: String,
+	// name: String
+});
+const FilterItem = mongoose.model('Filter', Filter);
 
 // const storage = multer.diskStorage({
 //     destination: function (req, file, cb) {
@@ -214,14 +281,14 @@ scrapping(filters).then(result => {
 // });
 
 
-// const jsonParser = express.json();
+const jsonParser = express.json();
 app.get('/', (request, response) => {
 	console.log('head')
 	response.render('admin');
 });
-app.get('/filters', (request, response) => {
+app.get('/filters', async (request, response) => {
 	console.log('filter')
-	response.render('filters');
+	response.render('filters', {filters: await FilterItem.find()});
 });
 app.get('/channels', (request, response) => {
 	console.log('channels')
@@ -232,10 +299,29 @@ app.get('/games', (request, response) => {
 	response.render('games');
 });
 
-// app.get('/edit', (request, response) => {
-// 	console.log('edit')
-// 	response.render('edit');
-// });
+app.post('/saveFilter', jsonParser, async (request, response) => {
+	let filterItem = new FilterItem(request.body);
+	await filterItem.save();
+	response.status(200).end();
+});
+
+app.post('/deleteFilter', jsonParser, async (request, response) => {
+	await FilterItem.deleteOne({name: request.body.name})
+	response.status(200).end();
+});
+
+app.post('/activateFilter', jsonParser, async (request, response) => {
+	await FilterItem.updateOne({name : request.body.name}, {$set: {status : 'active'}})
+	response.status(200).end();
+});
+
+app.post('/inactivateFilter', jsonParser, async (request, response) => {
+	await FilterItem.updateOne({name : request.body.name}, {$set: {status : 'inactive'}})
+	response.status(200).end();
+});
+
+
+
 // app.get('/preview', (request, response) => {
 // 	console.log('preview')
 // 	response.render('preview');

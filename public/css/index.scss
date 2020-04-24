@@ -57,13 +57,30 @@ body{
     padding-bottom: 10px;
     width: 100%;
     display: flex;
-    justify-content: flex-end;
+    flex-direction: column;
+    justify-content: flex-start;
     border-top: 1px solid rgba(#f50057, .1);
     border-bottom: 1px solid rgba(#f50057, .1);
     margin-bottom: 5px;
+    padding-left: 10px;
+    position: relative;
+    min-height: 100px;
+    .filter-name{
+      color: #2f2f2f;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+    .filter-sport{
+      margin-top: 10px;
+      color: #2f2f2f;
+      font-size: 0.9rem;
+    }
     .list-item-nav{
       display: flex;
       align-self: flex-end;
+      position: absolute;
+      bottom: 10px;
+      right: 0px;
       .button{
         width: 140px;
         height: 40px;
@@ -84,6 +101,14 @@ body{
           color: #639a67;
           background-color: #fff;
           border: 2px solid #639a67;
+        }
+      }
+      .inactivate{
+        background-color: #dbdbdb;
+        color: #2f2f2f;
+        &:hover{
+          background-color: #f50057;
+          color: #fff
         }
       }
       .edit{
@@ -148,7 +173,7 @@ body{
   left: 0;
   z-index: 1;
   background-color: rgba(#000, .5);
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: center;
   .create-filter-popup-wrap{

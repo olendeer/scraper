@@ -14,27 +14,21 @@
             <div class="create filter-create">Создать фильтр</div>
             <div class="filtres-list list">
                 <div class="header-list">Доступные фильтры</div>
-                <div class="filtres-list-item list-item">
-                    <div class="list-item-nav">
-                        <div class="button activate">Активировать</div>
-                        <div class="button edit">Изменить</div>
-                        <div class="button delete">Удалить</div>
+                <%filters.forEach(element => {%>
+                    <div class="filtres-list-item list-item">
+                        <div class="filter-name"><%=element.name%></div>
+                        <div class="filter-sport"><%=element.sport%></div>
+                        <div class="list-item-nav">
+                            <%if(element.status == 'active'){%>
+                                <div class="button inactivate">Деактивировать</div>
+                            <%}else{%>
+                                <div class="button activate">Активировать</div>
+                            <%}%>
+                            <div class="button edit">Изменить</div>
+                            <div class="button delete">Удалить</div>
+                        </div>
                     </div>
-                </div>
-                <div class="filtres-list-item list-item">
-                    <div class="list-item-nav">
-                        <div class="button activate">Активировать</div>
-                        <div class="button edit">Изменить</div>
-                        <div class="button delete">Удалить</div>
-                    </div>
-                </div>
-                <div class="filtres-list-item list-item">
-                    <div class="list-item-nav">
-                        <div class="button activate">Активировать</div>
-                        <div class="button edit">Изменить</div>
-                        <div class="button delete">Удалить</div>
-                    </div>
-                </div>
+                <%})%>
             </div>
         </div>
     </div>
