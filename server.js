@@ -9,40 +9,83 @@ cron.schedule('*/1 * * * *', () => {
 	.then(filters => {
 		if(filters.length > 0){
 			console.log('Start scraper')
-			// scrapping(filters).then(result => {
-			// 	console.log(result);
-			// })
-			filtration(filters);
+			filtrationScrapSportLine(filters);
 		}
 		else{
 			console.log('Filters not found')
 			return false;
 		}
 	})
+	setTimeout(function(){
+		FilterItem.find()
+		.then(filters => {
+			if(filters.length > 0){
+				console.log('Start scraper')
+				filtrationScrapSportLine(filters);
+			}
+			else{
+				console.log('Filters not found')
+				return false;
+			}
+		})
+	}, 30000)
 });
 
-async function filtration(filters){
+async function filtrationScrapSportLine(filters){
 	filters.forEach(filter => {
 		if(filter.status == 'active'){
 			if(filter.sport == 'basketball'){
-				scrapSport('https://betcityru.com/ru/line/bets?sp%5B%5D=3&ts=1')
+				scrapSportLine('https://betcityru.com/ru/line/bets?sp%5B%5D=3&ts=1', 'basketball')
 				.then(result => {
-					// console.log(result)
-					saveResults(filter, result)
+					saveResultsLine(filter, result)
 				})
+				EventLineItem.find({live: true, sport: 'basketball'})
+				.then(result => {
+					result.forEach(event => {
+						scrapSportLive(event.url, filter, event)
+						.then(result => {
+							if(result.operation == 'update'){
+								// massageTelegram(result);
+							}
+						})
+					})
+				})
+
 			}
 			else if(filter.sport == 'volleyball'){
-				scrapSport('https://betcityru.com/ru/line/bets?sp%5B%5D=12&ts=1')
+				scrapSportLine('https://betcityru.com/ru/line/bets?sp%5B%5D=12&ts=1' ,'volleyball')
 				.then(result => {
 					// console.log(result)
-					saveResults(filter, result)
+					saveResultsLine(filter, result)
+				})
+				EventLineItem.find({live: true, sport: 'volleyball'})
+				.then(result => {
+					result.forEach(event => {
+						scrapSportLive(event.url, filter, event)
+						.then(result => {
+							if(result.operation == 'update'){
+								// massageTelegram(result);
+							}
+						})
+					})
 				})
 			}
 			else if(filter.sport == 'tennis'){
-				scrapSport('https://betcityru.com/ru/line/bets?sp%5B%5D=2&ts=1')
+				scrapSportLine('https://betcityru.com/ru/line/bets?sp%5B%5D=2&ts=1' ,'tennis')
 				.then(result => {
 					// console.log(result)
-					saveResults(filter, result)
+					saveResultsLine(filter, result)
+				})
+				EventLineItem.find({live: true, sport: 'tennis'})
+				.then(result => {
+					result.forEach(event => {
+						scrapSportLive(event.url, filter, event)
+						.then(result => {
+							if(result.operation == 'update'){
+								// massageTelegram(result);
+							}
+						})
+					})
 				})
 			}
 		}
@@ -52,25 +95,33 @@ async function filtration(filters){
 
 
 
-async function saveResults(filter, result){
+async function saveResultsLine(filter, result){
 	let results = [];
 	let error = false;
-	result.forEach(event => {
-		error = false;
-		// if(event.coefficient < filter.difference[0] || event.coefficient > filter.difference[1]){
-		// 	error = true;
-		// }
-		// else if(event.fora < filter.fora[0] || event.fora > filter.fora[1]){
-		// 	error = true;
-		// }
-		// else if(event.total < filter.total[0] || event.fora > filter.total[1]){
-		// 	error = true;
-		// }
-		if(error == false){
-			results.push(event);
+	result.forEach(async event => {
+		let findEventLine =  await EventLineItem.findOne({url: event.url});
+		if(findEventLine == null){
+			error = false;
+			if(event.coefficient < filter.difference[0] || event.coefficient > filter.difference[1]){
+				error = true;
+			}
+			else if(event.fora < filter.fora[0] || event.fora > filter.fora[1]){
+				error = true;
+			}
+			else if(event.total < filter.total[0] || event.fora > filter.total[1]){
+				error = true;
+			}
+			if(error == false){
+				let newEventLine = new EventLineItem(event);
+				await newEventLine.save();
+				//отправка в телеграм
+				results.push(event);
+			}
 		}
+		else{
+		}	
 	})
-	console.log(results);
+	return false;
 }
 
 // const multer = require('multer');
@@ -99,27 +150,116 @@ start();
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
 
-async function scrapSport(url){
-	const browser = await puppeteer.launch({headless: false});
+
+
+async function scrapSportLive(url, filter, event){
+	url = url.replace(/\?.*/g, '');
+	const browser = await puppeteer.launch({headless: true});
+	const page = await browser.newPage();
+	await page.goto(url);
+	await page.waitFor(5000);
+
+	let result = await page.evaluate(() => {
+		let score;
+		let quart;
+		let findEventLive = {
+			operation: 'update',
+			score: '0',
+		}
+		score =	document.querySelector('.scoreboard-content__previous-score');
+		if(score != undefined){
+			quart = document.querySelector('.scoreboard-content__info').innerHTML.trim();
+			if(quart == 'Событие завершено'){
+				return {
+					operation: 'delete',
+					score: score.innerHTML
+				}
+			}
+			else{
+
+
+				//Поиск остальных данных
+				findEventLive.score = score.innerHTML;
+				return findEventLive;
+			}
+
+
+
+
+
+
+
+			
+		}
+		else{
+			return false;
+		}
+
+
+
+	});
+	if(result.operation == 'delete'){
+		let finishEventItem = new FinishEventItem({
+			filter: filter.name,
+			sport: filter.sport,
+			leage: 'leage',
+			player1: event.players[0],
+			player2: event.players[1],
+			rate: 'none',
+			result: result.score
+		});
+		await finishEventItem.save();
+		await EventLineItem.deleteOne({url: event.url})
+		//Отправить отчёт в телегу по результатам игры
+		browser.close();
+ 		return result;
+
+	}
+	else if(result.operation == 'update'){
+		browser.close();
+ 		return result;
+	}
+	else{
+		browser.close();
+ 		return result;
+	}
+
+}
+
+
+
+
+async function scrapSportLine(url, sport){
+	const browser = await puppeteer.launch({headless: true});
 	const page = await browser.newPage();
 	await page.goto(url);
 	await page.waitFor(5000);
 	let result = await page.evaluate(() => {
 		let findEvents = [];
 		let events = document.querySelectorAll('app-line-event-unit');
-		console.log(events)
 		events.forEach(async event => {
 			let players = [];
+			let live;
 			let findEvent = {
 				time: 0,
+				live: false,
+				url : 0,
 				players:[],
 				coefficient : 0,
 				fora : 0,
 				total: 0
 			};
+			//Поиск времени начала
+			findEvent.time = event.querySelector('.line-event__time-static_large').innerHTML.trim();
+			live = event.querySelector('.icon_live-text-grey');
+			if(live != undefined){
+				findEvent.live = true;
+			}
+			else{
+				findEvent.live = false;
+			}
+			findEvent.url = 'https://betcityru.com' + event.querySelector('.line-event__name').getAttribute('href')
 			//Поиск имён команд
-			findEvent.time = event.querySelector('.line-event__time-static_large').innerHTML.trim()
-
 			players = event.querySelectorAll('.line-event__name-teams b');
 			players.forEach(player => {
 				findEvent.players.push(player.innerHTML);
@@ -152,6 +292,7 @@ async function scrapSport(url){
 	result = result.filter(event => {
 		event.time = countTime(thisTime, event.time)
 		if(event.time < 30){
+			event.sport = sport;
 			return event;
 		}
 	})
@@ -209,23 +350,9 @@ function countTime(thisTime, startEventTime){
 
 
 
-async function scrapVolleyball(){
-	const browser = await puppeteer.launch({headless: false});
-	const page = await browser.newPage();
-	await page.goto('https://betcityru.com/ru/line/bets?sp%5B%5D=12');
-	await page.waitFor(5000);
-}
-async function scrapTennis(){
-	const browser = await puppeteer.launch({headless: false});
-	const page = await browser.newPage();
-	await page.goto('https://betcityru.com/ru/line/bets?sp%5B%5D=2');
-	await page.waitFor(5000);
-}
-
-
 async function scrapping(filters){
 	// if(filters.basketball != null){
-		return await scrapBasketball();
+		// return await scrapBasketball();
 	// }
 }
 
@@ -254,7 +381,31 @@ let Filter = mongoose.Schema({
 	// domain: String,
 	// name: String
 });
+
+let EventLine = mongoose.Schema({
+	time: Number,
+	live : Boolean,
+	url: String,
+	sport: String,
+	players: Array,
+	coefficient : Number,
+	fora : Number,
+	total: Number
+})
+
+let FinishEvent = mongoose.Schema({
+	filter: String,
+	sport: String,
+	leage: String,
+	player1: String,
+	player2: String,
+	rate: String,
+	result: String
+})
+
+const EventLineItem = mongoose.model('EventLine', EventLine);
 const FilterItem = mongoose.model('Filter', Filter);
+const FinishEventItem = mongoose.model('FinishEvent', FinishEvent);
 
 // const storage = multer.diskStorage({
 //     destination: function (req, file, cb) {
@@ -300,6 +451,18 @@ app.get('/games', (request, response) => {
 });
 
 app.post('/saveFilter', jsonParser, async (request, response) => {
+	if(request.body.difference[1] == 0){
+		request.body.difference[1] = 10000;
+	}
+	if(request.body.total[1] == 0){
+		request.body.total[1] = 10000;
+	}
+	if(request.body.fora[1] == 0){
+		request.body.fora[1] = 10000;
+	}
+	if(request.body.sport == 'none'){
+		request.body.status = 'inactive';
+	}
 	let filterItem = new FilterItem(request.body);
 	await filterItem.save();
 	response.status(200).end();
