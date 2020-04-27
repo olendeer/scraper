@@ -10,26 +10,24 @@ const PORT = process.env.PORT || 3000;
 const TOKEN = '1178068165:AAHnNRDsp3s1tS9ViIw7DoRwBqFTmFUZVSY';
 
 const app = express();
-// const bot = new TelegramBot(TOKEN, {
-// 	polling: true
-// })
+const bot = new TelegramBot(TOKEN, {
+	polling: true
+})
 
-// bot.on('message', msg => {
-// 	console.log(msg.text);
-// 	if(msg.text == 'love'){
-// 		bot.sendMessage(msg.chat.id, 'Зайка, я тебя люблю больше всего на свете!!!Твой любимый муж)');
-// 	}
-// })
-
-
-
+bot.on('message', msg => {
+	console.log(msg.text);
+	if(msg.text == 'love'){
+		bot.sendMessage(msg.chat.id, 'Зайка, я тебя люблю больше всего на свете!!!Твой любимый муж)')
+		.then(res => console.log(res))
+	}
+})
 
 
 
 function sendTelegramLine(filter, event){
 	let html = `
-<strong>${event.sport.toUpperCase()}</strong>
-<strong>${event.leage}</strong>
+<strong>*${event.sport.toUpperCase()}*</strong>
+<strong>*${event.leage}*</strong>
 П1/П2 : ${event.coefficient}
 Фора  : ${event.fora}
 Тотал : ${event.total}
@@ -61,17 +59,17 @@ function sendTelegramLine(filter, event){
 
 function sendReportTelegram(filter, event){
 	let html = `
-<strong>Отчёт</strong>
-Вид спорта: ${event.sport}
-Название игры: -
-Лига:${event.leage}
-Фильтр: ${filter.name}
+		<strong>Отчёт</strong>
+		Вид спорта: ${event.sport}
+		Название игры: -
+		Лига:${event.leage}
+		Фильтр: ${filter.name}
 
-П1/П2 : ${event.coefficient}
-Фора  : ${event.fora}
-Тотал : ${event.total}
+		П1/П2 : ${event.coefficient}
+		Фора  : ${event.fora}
+		Тотал : ${event.total}
 
-Фильтр: ${filter.name}
+		Фильтр: ${filter.name}
 	`;
 	filter.chats.forEach(chat => {
 		ChannelItem.findOne({name: chat})
@@ -96,9 +94,58 @@ function sendReportTelegram(filter, event){
 	})
 }
 
+async function sendTelegramLive(event, filter){
+	let html = `
+		<strong>*${event.sport.toUpperCase()}*</strong>
+		<strong>*${event.leage}*</strong>
 
+		Счёт в текущей четверти : __:__
+		Номер четверти: __
+		Счёт по четвертям: __:__
+		Текущий тотал: ____ (_коэффициент_)
+		Общий средний тотал: ____ (_коэффициент_) 
+		Текущая фора:  ____ (_коэффициент_) 
+		Фолы текущей четверти: __:__
+		Процент попадания общ: __:__
+		Время четверти в минутах и секундах (формат - мм:сс)
+		Осталось набрать(Тотал): ___
+		Осталось набрать(Фора): ___
 
+		Фильтр: ${filter.name}
+	`;
+	await filter.chats.forEach(chat => {
+		ChannelItem.findOne({name: chat})
+		.then(chat => {
+			bot.sendMessage('@' + chat.chatId, html,{
+				parse_mode: 'HTML',
+				reply_markup: {
+					inline_keyboard:[
+						[
+							{
+								text: 'Ссылка',
+								url : event.url
+							}
+						]
+					]
+				}
+			})
+			.then(message => {
+				event.messageIds.push({
+					chatId: message.from.username,
+					messageId: message.message_id
+				})
+			})
+			.catch(error => {
+				console.log('Chat not found');
+			})
+		})
+	})
+	return event;
+}
 
+function updateTelegramLive(event, message_id){
+
+}
 
 async function start(){
 	try{
@@ -239,11 +286,10 @@ async function saveResultsLine(filter, result){
 	return false;
 }
 
-// const multer = require('multer');
-// const { base64encode, base64decode } = require('nodejs-base64');
-// const btoa = require('btoa');
-// const path = require('path');
-// const fs = require('fs');
+
+
+
+
 
 async function scrapSportLive(url, filter, event){
 	const browser = await puppeteer.launch({headless: true, args: ['--no-sandbox'], ignoreDefaultArgs: ['--disable-extensions']});
@@ -280,9 +326,6 @@ async function scrapSportLive(url, filter, event){
 		else{
 			return false;
 		}
-
-
-
 	});
 	if(result.operation == 'delete'){
 		let finishEventItem = new FinishEventItem({
@@ -297,25 +340,24 @@ async function scrapSportLive(url, filter, event){
 		await finishEventItem.save();
 		await EventLineItem.deleteOne({url: event.url})
 		//Отправить отчёт в телегу по результатам игры
-		sendReportTelegram(filter, result.finishEvent);
+		// sendReportTelegram(filter, result.finishEvent);
 
 		browser.close();
  		return false;
 
 	}
 	else if(result.operation == 'update'){
-		EventLineItem.findOne({url: url})
-		.then(result => {
-			console.log(result)
-			// if(result.sendTelegramLive == false){
-			// 	sendTelegramLive();
-			// }
-			// else{
-			// 	updateTelegramLive(result.sendTelegramLive)
-			// }
-			browser.close();
- 			return false;
-		})
+		if(event.sendTelegramLive == false){
+			sendTelegramLive(event, filter)
+			.then(event => {
+				EventLineItem.updateOne({url : event.url}, event)
+			})
+		}
+		else{
+			// updateTelegramLive(liveEvent.sendTelegramLive)
+		}
+		browser.close();
+			return false;
 	}
 	else{
 		browser.close();
@@ -346,6 +388,7 @@ async function scrapSportLine(url, sport){
 				time: 0,
 				live: false,
 				sendTelegramLive: false,
+				messageId: '',
 				leage: '-',
 				url : 0,
 				players:[],
@@ -485,6 +528,7 @@ let EventLine = mongoose.Schema({
 	time: Number,
 	live : Boolean,
 	sendTelegramLive: Boolean,
+	messageIds: Array,
 	url: String,
 	sport: String,
 	leage: String,
