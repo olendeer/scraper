@@ -79,32 +79,32 @@ app.use(express.static('public'));
 
 
 
-// cron.schedule('*/1 * * * *', () => {
-// 	FilterItem.find()
-// 	.then(filters => {
-// 		if(filters.length > 0){
-// 			console.log('Start scraper')
-// 			filtrationScrapSportLine(filters);
-// 		}
-// 		else{
-// 			console.log('Filters not found')
-// 			return false;
-// 		}
-// 	})
-// 	setTimeout(function(){
-// 		FilterItem.find()
-// 		.then(filters => {
-// 			if(filters.length > 0){
-// 				console.log('Start scraper')
-// 				filtrationScrapSportLine(filters);
-// 			}
-// 			else{
-// 				console.log('Filters not found')
-// 				return false;
-// 			}
-// 		})
-// 	}, 30000)
-// });
+cron.schedule('*/1 * * * *', () => {
+	FilterItem.find()
+	.then(filters => {
+		if(filters.length > 0){
+			console.log('Start scraper')
+			filtrationScrapSportLine(filters);
+		}
+		else{
+			console.log('Filters not found')
+			return false;
+		}
+	})
+	setTimeout(function(){
+		FilterItem.find()
+		.then(filters => {
+			if(filters.length > 0){
+				console.log('Start scraper')
+				filtrationScrapSportLine(filters);
+			}
+			else{
+				console.log('Filters not found')
+				return false;
+			}
+		})
+	}, 30000)
+});
 
 
 
