@@ -91,19 +91,19 @@ cron.schedule('*/1 * * * *', () => {
 			return false;
 		}
 	})
-	// setTimeout(function(){
-	// 	FilterItem.find()
-	// 	.then(filters => {
-	// 		if(filters.length > 0){
-	// 			console.log('Start scraper')
-	// 			filtrationScrapSportLine(filters);
-	// 		}
-	// 		else{
-	// 			console.log('Filters not found')
-	// 			return false;
-	// 		}
-	// 	})
-	// }, 30000)
+	setTimeout(function(){
+		FilterItem.find()
+		.then(filters => {
+			if(filters.length > 0){
+				console.log('Start scraper')
+				filtrationScrapSportLine(filters);
+			}
+			else{
+				console.log('Filters not found')
+				return false;
+			}
+		})
+	}, 30000)
 });
 
 
@@ -208,6 +208,10 @@ async function saveResultsLine(filter, result){
 async function scrapSportLive(url, filter, event){
 	const browser = await puppeteer.launch({headless: true, args: ['--no-sandbox'], ignoreDefaultArgs: ['--disable-extensions']});
 	const page = await browser.newPage();
+	process.on('unhandledRejection', (reason, p) => {
+	    console.error('Unhandled Rejection at: Promise', p, 'reason:', reason);
+	    browser.close();
+	  });
 	await page.goto(url);
 	await page.waitFor(5000);
 
@@ -284,6 +288,10 @@ async function scrapSportLive(url, filter, event){
 async function scrapSportLine(url, sport){
 	const browser = await puppeteer.launch({headless: true, args: ['--no-sandbox'], ignoreDefaultArgs: ['--disable-extensions']});
 	const page = await browser.newPage();
+	process.on('unhandledRejection', (reason, p) => {
+	    console.error('Unhandled Rejection at: Promise', p, 'reason:', reason);
+	    browser.close();
+	  });
 	await page.goto(url);
 	await page.waitFor(5000);
 	let result = await page.evaluate(() => {
