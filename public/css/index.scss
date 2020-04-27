@@ -132,6 +132,11 @@ body{
     }
   }
 }
+.channel-info{
+  color: #2f2f2f;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
 .nav{
 	min-width: 200px;
 	box-sizing: border-box;
@@ -165,7 +170,7 @@ body{
     }
   }
 
-.create-filter-popup{
+.create-filter-popup, .create-channel-popup{
   width: 100vw;
   height: 100vh;
   position: fixed;
@@ -176,7 +181,7 @@ body{
   display: none;
   align-items: center;
   justify-content: center;
-  .create-filter-popup-wrap{
+  .create-filter-popup-wrap, .create-channel-popup-wrap{
     padding: 10px;
     height: 90%;
     width: 90%;
@@ -200,6 +205,9 @@ body{
     }
   }
 }
+.create-channel-popup-wrap{
+  flex-direction: column;
+}
 .column-create{
   height: 100%;
   width: 30%;
@@ -210,8 +218,18 @@ body{
   box-sizing: border-box;
   border-right: 1px solid rgba(#2f2f2f, .2);
 }
-
-.filter-text{
+.channels-list-item{
+  display: -webkit-flex;
+  display: -moz-flex;
+  display: -ms-flex;
+  display: -o-flex;
+  display: flex;
+  flex-direction: row !important;
+  span{
+    margin-right: 15px;
+  }
+}
+.filter-text, .channel-text{
   font-weight: 600;
   font-size: 0.8rem;
   color: #2f2f2f;
@@ -294,7 +312,7 @@ label{
     box-sizing: border-box;
     border: 2px solid  transparent;
   }
-  .save{
+  .save, .edition{
     background-color: #639a67;
     margin-right: 10px;
     &:hover{
@@ -310,5 +328,31 @@ label{
       background-color: #fff;
       border: 2px solid #f50057;
     }
+  }
+}
+
+
+.table-games{
+  padding: 10px;
+  box-sizing: border-box;
+}
+.table-games, .games-list-item{
+  display: -webkit-flex;
+  display: -moz-flex;
+  display: -ms-flex;
+  display: -o-flex;
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  span{
+    width: 200px;
+  }
+  .players{
+    display: -webkit-flex;
+    display: -moz-flex;
+    display: -ms-flex;
+    display: -o-flex;
+    display: flex;
+    flex-direction: column;
   }
 }

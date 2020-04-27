@@ -3,33 +3,110 @@ const cron = require('node-cron');
 const puppeteer = require('puppeteer');
 const date = require('date-and-time');
 const mongoose = require('mongoose');
+const TelegramBot = require('node-telegram-bot-api');
 
-cron.schedule('*/1 * * * *', () => {
-	FilterItem.find()
-	.then(filters => {
-		if(filters.length > 0){
-			console.log('Start scraper')
-			filtrationScrapSportLine(filters);
-		}
-		else{
-			console.log('Filters not found')
-			return false;
-		}
-	})
-	setTimeout(function(){
-		FilterItem.find()
-		.then(filters => {
-			if(filters.length > 0){
-				console.log('Start scraper')
-				filtrationScrapSportLine(filters);
-			}
-			else{
-				console.log('Filters not found')
-				return false;
-			}
+
+const PORT = process.env.PORT || 3000;
+const TOKEN = '1178068165:AAHnNRDsp3s1tS9ViIw7DoRwBqFTmFUZVSY';
+
+const app = express();
+const bot = new TelegramBot(TOKEN, {
+	polling: true
+})
+
+bot.on('message', msg => {
+	console.log(msg.text);
+	if(msg.text == 'love'){
+		bot.sendMessage(msg.chat.id, 'Зайка, я тебя люблю больше всего на свете!!!Твой любимый муж)');
+	}
+})
+
+
+
+
+
+
+function sendTelegramLine(filter, event){
+	let html = `
+<strong>${event.sport.toUpperCase()}</strong>
+<strong>${event.leage}</strong>
+П1/П2 : ${event.coefficient}
+Фора  : ${event.fora}
+Тотал : ${event.total}
+
+Фильтр: ${filter.name}
+	`;
+	filter.chats.forEach(chat => {
+		ChannelItem.findOne({name: chat})
+		.then(chat => {
+			bot.sendMessage('@' + chat.chatId, html,{
+				parse_mode: 'HTML',
+				reply_markup: {
+					inline_keyboard:[
+						[
+							{
+								text: 'Ссылка',
+								url : event.url
+							}
+						]
+					]
+				}
+			})
+			.catch(error => {
+				console.log('Chat not found');
+			})
 		})
-	}, 30000)
-});
+	})
+}
+async function start(){
+	try{
+		app.listen(PORT, () => {
+			console.log('Server has been started...');
+		});
+		await mongoose.connect('mongodb+srv://olendeer:1029384756qazqwertyuiop@scraper-7vfov.mongodb.net/test?retryWrites=true&w=majority', {useNewUrlParser: true, useUnifiedTopology: true});
+		console.log('Set connetion to data base');
+
+	}catch(e){
+		console.log(e)
+		console.log('Not connetion!')
+	}
+}
+
+start(); 
+app.set('view engine', 'ejs');
+app.use(express.static('public'));
+
+
+
+
+// cron.schedule('*/1 * * * *', () => {
+// 	FilterItem.find()
+// 	.then(filters => {
+// 		if(filters.length > 0){
+// 			console.log('Start scraper')
+// 			filtrationScrapSportLine(filters);
+// 		}
+// 		else{
+// 			console.log('Filters not found')
+// 			return false;
+// 		}
+// 	})
+// 	setTimeout(function(){
+// 		FilterItem.find()
+// 		.then(filters => {
+// 			if(filters.length > 0){
+// 				console.log('Start scraper')
+// 				filtrationScrapSportLine(filters);
+// 			}
+// 			else{
+// 				console.log('Filters not found')
+// 				return false;
+// 			}
+// 		})
+// 	}, 30000)
+// });
+
+
 
 async function filtrationScrapSportLine(filters){
 	filters.forEach(filter => {
@@ -96,7 +173,6 @@ async function filtrationScrapSportLine(filters){
 
 
 async function saveResultsLine(filter, result){
-	let results = [];
 	let error = false;
 	result.forEach(async event => {
 		let findEventLine =  await EventLineItem.findOne({url: event.url});
@@ -114,8 +190,7 @@ async function saveResultsLine(filter, result){
 			if(error == false){
 				let newEventLine = new EventLineItem(event);
 				await newEventLine.save();
-				//отправка в телеграм
-				results.push(event);
+				sendTelegramLine(filter, event);
 			}
 		}
 		else{
@@ -129,32 +204,9 @@ async function saveResultsLine(filter, result){
 // const btoa = require('btoa');
 // const path = require('path');
 // const fs = require('fs');
-const app = express();
-const PORT = process.env.PORT || 3000;
-
-
-async function start(){
-	try{
-		app.listen(PORT, () => {
-			console.log('Server has been started...');
-		});
-		await mongoose.connect('mongodb+srv://olendeer:1029384756qazqwertyuiop@scraper-7vfov.mongodb.net/test?retryWrites=true&w=majority', {useNewUrlParser: true, useUnifiedTopology: true});
-		console.log('Set connetion to data base');
-	}catch(e){
-		console.log(e)
-		console.log('Not connetion!')
-	}
-}
-
-start(); 
-app.set('view engine', 'ejs');
-app.use(express.static('public'));
-
-
 
 async function scrapSportLive(url, filter, event){
-	url = url.replace(/\?.*/g, '');
-	const browser = await puppeteer.launch({headless: true});
+	const browser = await puppeteer.launch({headless: true, args: ['--no-sandbox']});
 	const page = await browser.newPage();
 	await page.goto(url);
 	await page.waitFor(5000);
@@ -202,7 +254,7 @@ async function scrapSportLive(url, filter, event){
 		let finishEventItem = new FinishEventItem({
 			filter: filter.name,
 			sport: filter.sport,
-			leage: 'leage',
+			leage: event.leage,
 			player1: event.players[0],
 			player2: event.players[1],
 			rate: 'none',
@@ -230,7 +282,7 @@ async function scrapSportLive(url, filter, event){
 
 
 async function scrapSportLine(url, sport){
-	const browser = await puppeteer.launch({headless: true});
+	const browser = await puppeteer.launch({headless: true, args: ['--no-sandbox']});
 	const page = await browser.newPage();
 	await page.goto(url);
 	await page.waitFor(5000);
@@ -243,6 +295,7 @@ async function scrapSportLine(url, sport){
 			let findEvent = {
 				time: 0,
 				live: false,
+				leage: '-',
 				url : 0,
 				players:[],
 				coefficient : 0,
@@ -258,7 +311,9 @@ async function scrapSportLine(url, sport){
 			else{
 				findEvent.live = false;
 			}
-			findEvent.url = 'https://betcityru.com' + event.querySelector('.line-event__name').getAttribute('href')
+
+			findEvent.leage = event.parentElement.querySelector('.line-champ__header-name a').innerHTML;
+			findEvent.url = 'https://betcityru.com' + event.querySelector('.line-event__name').getAttribute('href').replace(/\?.*/g, '');
 			//Поиск имён команд
 			players = event.querySelectorAll('.line-event__name-teams b');
 			players.forEach(player => {
@@ -296,6 +351,7 @@ async function scrapSportLine(url, sport){
 			return event;
 		}
 	})
+	// console.log(result)
 	browser.close();
  	return result;
 }
@@ -367,19 +423,11 @@ async function scrapping(filters){
 let Filter = mongoose.Schema({
 	name: String,
 	sport: String,
+	chats: Array,
     difference: Array,
     fora: Array,
 	total: Array,
 	status: String
-	// favicon: String,
-	// backgroundImage: String,
-	// type: String,
-	// typeLogo: String,
-	// title: String,
-	// metaTitle: String,
-	// metaDescription: String,
-	// domain: String,
-	// name: String
 });
 
 let EventLine = mongoose.Schema({
@@ -387,6 +435,7 @@ let EventLine = mongoose.Schema({
 	live : Boolean,
 	url: String,
 	sport: String,
+	leage: String,
 	players: Array,
 	coefficient : Number,
 	fora : Number,
@@ -403,10 +452,16 @@ let FinishEvent = mongoose.Schema({
 	result: String
 })
 
+let Channel = mongoose.Schema({
+	name: String,
+	chatId: String,
+	url: String
+})
+
 const EventLineItem = mongoose.model('EventLine', EventLine);
 const FilterItem = mongoose.model('Filter', Filter);
 const FinishEventItem = mongoose.model('FinishEvent', FinishEvent);
-
+const ChannelItem = mongoose.model('Channel', Channel);
 // const storage = multer.diskStorage({
 //     destination: function (req, file, cb) {
 //         cb(null, __dirname + '/adminfiles/customImg/')
@@ -439,15 +494,15 @@ app.get('/', (request, response) => {
 });
 app.get('/filters', async (request, response) => {
 	console.log('filter')
-	response.render('filters', {filters: await FilterItem.find()});
+	response.render('filters', {filters: await FilterItem.find(), channels: await ChannelItem.find()});
 });
-app.get('/channels', (request, response) => {
+app.get('/channels', async (request, response) => {
 	console.log('channels')
-	response.render('channels');
+	response.render('channels', {channels: await ChannelItem.find()});
 });
-app.get('/games', (request, response) => {
+app.get('/games', async (request, response) => {
 	console.log('games')
-	response.render('games');
+	response.render('games', {games: await FinishEventItem.find().limit(30)});
 });
 
 app.post('/saveFilter', jsonParser, async (request, response) => {
@@ -468,8 +523,20 @@ app.post('/saveFilter', jsonParser, async (request, response) => {
 	response.status(200).end();
 });
 
+
+app.post('/saveChannel', jsonParser, async (request, response) => {
+	console.log(request.body)
+	let channelItem = new ChannelItem(request.body);
+	await channelItem.save();
+	response.status(200).end();
+});
+
 app.post('/deleteFilter', jsonParser, async (request, response) => {
 	await FilterItem.deleteOne({name: request.body.name})
+	response.status(200).end();
+});
+app.post('/deleteChannel', jsonParser, async (request, response) => {
+	await ChannelItem.deleteOne({chatId: request.body.chatId})
 	response.status(200).end();
 });
 
@@ -483,85 +550,15 @@ app.post('/inactivateFilter', jsonParser, async (request, response) => {
 	response.status(200).end();
 });
 
+app.post('/editFilter', jsonParser, async (request, response) => {
+	FilterItem.findOne({name : request.body.name})
+	.then(result => {
+		response.json(result);
+	})
+});
 
 
-// app.get('/preview', (request, response) => {
-// 	console.log('preview')
-// 	response.render('preview');
-// });
-
-
-// let landing;
-// let githubUpload = [];
-// app.post('/createLanding', jsonParser, async (request, response) => {
-// 	let data = request.body;
-// 	landing = new Landing({
-// 	    styles: data.styles,
-// 	    configElements: data.configElements,
-// 		logo: data.logo,
-// 		favicon: data.favicon,
-// 		backgroundImage: data.backgroundImage,
-// 		type: data.type,
-// 		typeLogo: data.typeLogo,
-// 		title: data.title,
-// 		metaTitle: data.metaTitle,
-// 		metaDescription: data.metaDescription,
-// 		domain: data.domain,
-// 		name: data.name
-// 	});
-
-// 	githubUpload = [];
-// 	let index = fs.readFileSync('default/index.html', 'utf8');
-// 	githubUpload.push({
-// 		filePath: 'default/index.html',
-// 		file: base64encode(index)
-// 	})
-
-// 	let customImgs = fs.readdirSync('adminfiles/customImg');
-// 	if(customImgs.length != 0){
-// 		customImgs.forEach(fileName => {
-// 			file = btoa(fs.readFileSync('adminfiles/customImg/' + fileName))
-// 			githubUpload.push({
-// 				filePath: 'default/customImg/' + fileName,
-// 				file : file
-// 			})
-// 		})
-// 	}
-// 	await landing.save();
-// 	fs.writeFileSync('default/js/configid.js', 'let id = "' + landing._id + '";');
-// 	let id = fs.readFileSync('default/js/configid.js', 'utf8');
-// 	githubUpload.push({
-// 		filePath: 'default/js/configid.js',
-// 		file: base64encode(id)
-// 	})
-// 	console.log('Create new landing - ' + landing.name);
-// 	await clearWork();
-// 	response.json(githubUpload);
-// });
-
-// async function clearWork(){
-// 	let customImgs = fs.readdirSync('adminfiles/customImg');
-// 	customImgs.forEach(img => {
-// 		fs.unlinkSync('adminfiles/customImg/' + img)
-// 	})
-// }
-
-
-
-
-// app.post('/getConfig', jsonParser, async (request, response) => {
-// 	let config = request.body;
-// 	let landing = await Landing.findOne({ "_id": config.id });
-// 	console.log('Open landing - ' + landing.name)
-// 	response.json(landing)
-// });
-
-
-// app.get('/default/:folder/:file', (request, response) => {
-// 	let pathFile = __dirname + '/default/' + request.params.folder + '/'  + request.params.file;
-// 	response.sendFile(pathFile)
-// })
-// app.get('/default/illustration/:folder/:file', (request, response) => {
-// 	let pathFile = __dirname + '/default/illustration/' + request.params.folder + '/'  + request.params.file;
-// 	response.sendFile(pathFile)
-// })
+app.post('/editionFilter', jsonParser, async (request, response) => {
+	await FilterItem.updateOne({name : request.body.name}, request.body, {upsert: true})
+	response.status(200).end();
+});

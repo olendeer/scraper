@@ -11,15 +11,37 @@
         <%- include('header.ejs', {top: 2})%>
         <div class="content">
             <div class="header-content">Настройте ваши каналы</div>
-            <div class="create">Добавить канал</div>
+            <div class="create channel-create">Добавить канал</div>
             <div class="channels-list list">
                 <div class="header-list">Каналы для отправки результатов</div>
-                <div class="channels-list-item list-item"></div>
-                <div class="channels-list-item list-item"></div>
-                <div class="channels-list-item list-item"></div>
+                 <%channels.forEach(element => {%>
+                    <div class="channels-list-item list-item">
+                        <span class="channel-info"><%=element.name%></span>
+                        <span class="channel-info chatId"><%=element.chatId%></span>
+                        <span class="channel-info"><%=element.url%></span>
+                        <div class="list-item-nav">
+                            <div class="button delete">Удалить</div>
+                        </div>
+                    </div>
+                 <%})%>
             </div>
         </div>
     </div>
-
+    <div class="create-channel-popup">
+        <div class="create-channel-popup-wrap">
+            <div class="close-popup close-popup-btn">Закрыть</div>
+            <div class="name-channel channel-text">Название канала</div>
+            <input type="text" name="name">
+            <div class="id-channel channel-text">ID чата</div>
+            <input type="text" name="id">
+            <div class="url-channel channel-text">Ссылка на канал</div>
+            <input type="text" name="url">
+            <div class="nav-btns">
+                <div class="button save save-channel">Создать</div>
+                <div class="button cancel close-popup-btn">Отмена</div>
+            </div>
+        </div>
+    </div>
+    <script src="js/channel.js"></script>
 </body>
 </html>

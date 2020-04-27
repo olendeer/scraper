@@ -12,9 +12,30 @@
         <div class="content">
             <div class="header-content">Прошедшие игры</div>
             <div class="games-list list">
-                <div class="games-list-item list-item"></div>
-                <div class="games-list-item list-item"></div>
-                <div class="games-list-item list-item"></div>
+                <div class="table-games">
+                    <span>Фильтр</span>
+                    <span>Вид спорта</span>
+                    <span>Лига</span>
+                    <span>Игроки</span>
+                    <span>Ставка</span>
+                    <span>Результат</span>
+                </div>
+                <%let i = 0%>
+                <%games.forEach(element => {%>
+                    <div class="games-list-item list-item">
+                        <div class="games-list-item">
+                            <span><%=element.filter%></span>
+                            <span><%=element.sport%></span>
+                            <span><%=element.leage%></span>
+                            <div class="players">
+                                <span><%=element.player1%></span>
+                                <span><%=element.player2%></span>
+                            </div>
+                            <span><%=element.rate%></span>
+                            <span><%=element.result%></span>
+                        </div>
+                    </div>
+                <%})%>
             </div>
         </div>
     </div>

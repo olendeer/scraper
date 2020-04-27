@@ -53,8 +53,13 @@
                 <div class="age-filter filter-text">Возраст</div>
                 <input type="text" name="age">
                 <div class="channel-filter filter-text">Каналы</div>
-                <input type="checkbox" id="channel">
-                <label for="channel">Какой-то канал</label>
+                <%let i = 0;%>
+                <%channels.forEach(element => {%>
+                    <%i++;%>
+                    <input type="checkbox" id="channel<%=i%>">
+                    <label for="channel<%=i%>"><%=element.name%></label>
+                    <br>
+                <%})%>
                 <div class="status-filter filter-text">Статус после создания</div>
                 <select class="status">
                     <option value="active">Активирован</option>
@@ -236,6 +241,7 @@
             </div>
             <div class="nav-btns">
                 <div class="button save">Создать</div>
+                <div class="button edition">Сохранить</div>
                 <div class="button cancel close-popup-btn">Отмена</div>
             </div>
         </div>
