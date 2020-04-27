@@ -206,7 +206,7 @@ async function saveResultsLine(filter, result){
 // const fs = require('fs');
 
 async function scrapSportLive(url, filter, event){
-	const browser = await puppeteer.launch({headless: true, args: ['--no-sandbox']});
+	const browser = await puppeteer.launch({headless: true, args: ['--no-sandbox'], ignoreDefaultArgs: ['--disable-extensions']});
 	const page = await browser.newPage();
 	await page.goto(url);
 	await page.waitFor(5000);
@@ -282,7 +282,7 @@ async function scrapSportLive(url, filter, event){
 
 
 async function scrapSportLine(url, sport){
-	const browser = await puppeteer.launch({headless: true, args: ['--no-sandbox']});
+	const browser = await puppeteer.launch({headless: true, args: ['--no-sandbox'], ignoreDefaultArgs: ['--disable-extensions']});
 	const page = await browser.newPage();
 	await page.goto(url);
 	await page.waitFor(5000);
