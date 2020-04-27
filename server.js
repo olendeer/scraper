@@ -10,16 +10,16 @@ const PORT = process.env.PORT || 3000;
 const TOKEN = '1178068165:AAHnNRDsp3s1tS9ViIw7DoRwBqFTmFUZVSY';
 
 const app = express();
-const bot = new TelegramBot(TOKEN, {
-	polling: true
-})
+// const bot = new TelegramBot(TOKEN, {
+// 	polling: true
+// })
 
-bot.on('message', msg => {
-	console.log(msg.text);
-	if(msg.text == 'love'){
-		bot.sendMessage(msg.chat.id, 'Зайка, я тебя люблю больше всего на свете!!!Твой любимый муж)');
-	}
-})
+// bot.on('message', msg => {
+// 	console.log(msg.text);
+// 	if(msg.text == 'love'){
+// 		bot.sendMessage(msg.chat.id, 'Зайка, я тебя люблю больше всего на свете!!!Твой любимый муж)');
+// 	}
+// })
 
 
 
@@ -58,6 +58,48 @@ function sendTelegramLine(filter, event){
 		})
 	})
 }
+
+function sendReportTelegram(filter, event){
+	let html = `
+<strong>Отчёт</strong>
+Вид спорта: ${event.sport}
+Название игры: -
+Лига:${event.leage}
+Фильтр: ${filter.name}
+
+П1/П2 : ${event.coefficient}
+Фора  : ${event.fora}
+Тотал : ${event.total}
+
+Фильтр: ${filter.name}
+	`;
+	filter.chats.forEach(chat => {
+		ChannelItem.findOne({name: chat})
+		.then(chat => {
+			bot.sendMessage('@' + chat.chatId, html,{
+				parse_mode: 'HTML',
+				reply_markup: {
+					inline_keyboard:[
+						[
+							{
+								text: 'Ссылка',
+								url : event.url
+							}
+						]
+					]
+				}
+			})
+			.catch(error => {
+				console.log('Chat not found');
+			})
+		})
+	})
+}
+
+
+
+
+
 async function start(){
 	try{
 		app.listen(PORT, () => {
@@ -79,32 +121,32 @@ app.use(express.static('public'));
 
 
 
-// cron.schedule('*/1 * * * *', () => {
-// 	FilterItem.find()
-// 	.then(filters => {
-// 		if(filters.length > 0){
-// 			console.log('Start scraper')
-// 			filtrationScrapSportLine(filters);
-// 		}
-// 		else{
-// 			console.log('Filters not found')
-// 			return false;
-// 		}
-// 	})
-// 	setTimeout(function(){
-// 		FilterItem.find()
-// 		.then(filters => {
-// 			if(filters.length > 0){
-// 				console.log('Start scraper')
-// 				filtrationScrapSportLine(filters);
-// 			}
-// 			else{
-// 				console.log('Filters not found')
-// 				return false;
-// 			}
-// 		})
-// 	}, 30000)
-// });
+cron.schedule('*/1 * * * *', () => {
+	FilterItem.find()
+	.then(filters => {
+		if(filters.length > 0){
+			console.log('Start scraper')
+			filtrationScrapSportLine(filters);
+		}
+		else{
+			console.log('Filters not found')
+			return false;
+		}
+	})
+	setTimeout(function(){
+		FilterItem.find()
+		.then(filters => {
+			if(filters.length > 0){
+				console.log('Start scraper')
+				filtrationScrapSportLine(filters);
+			}
+			else{
+				console.log('Filters not found')
+				return false;
+			}
+		})
+	}, 30000)
+});
 
 
 
@@ -121,9 +163,7 @@ async function filtrationScrapSportLine(filters){
 					result.forEach(event => {
 						scrapSportLive(event.url, filter, event)
 						.then(result => {
-							if(result.operation == 'update'){
-								// massageTelegram(result);
-							}
+							
 						})
 					})
 				})
@@ -232,20 +272,10 @@ async function scrapSportLive(url, filter, event){
 				}
 			}
 			else{
-
-
 				//Поиск остальных данных
 				findEventLive.score = score.innerHTML;
 				return findEventLive;
 			}
-
-
-
-
-
-
-
-			
 		}
 		else{
 			return false;
@@ -267,13 +297,25 @@ async function scrapSportLive(url, filter, event){
 		await finishEventItem.save();
 		await EventLineItem.deleteOne({url: event.url})
 		//Отправить отчёт в телегу по результатам игры
+		sendReportTelegram(filter, result.finishEvent);
+
 		browser.close();
- 		return result;
+ 		return false;
 
 	}
 	else if(result.operation == 'update'){
-		browser.close();
- 		return result;
+		EventLineItem.findOne({url: url})
+		.then(result => {
+			console.log(result)
+			// if(result.sendTelegramLive == false){
+			// 	sendTelegramLive();
+			// }
+			// else{
+			// 	updateTelegramLive(result.sendTelegramLive)
+			// }
+			browser.close();
+ 			return false;
+		})
 	}
 	else{
 		browser.close();
@@ -303,6 +345,7 @@ async function scrapSportLine(url, sport){
 			let findEvent = {
 				time: 0,
 				live: false,
+				sendTelegramLive: false,
 				leage: '-',
 				url : 0,
 				players:[],
@@ -441,6 +484,7 @@ let Filter = mongoose.Schema({
 let EventLine = mongoose.Schema({
 	time: Number,
 	live : Boolean,
+	sendTelegramLive: Boolean,
 	url: String,
 	sport: String,
 	leage: String,
