@@ -41,12 +41,27 @@ document.querySelectorAll('input[type="checkbox"]').forEach(elem => {
 
 document.querySelector('.save').addEventListener('click', function(){
     let activeChats = [];
+    let url;
+    let sport = document.querySelector('.sport').value;
+    if(sport == 'basketball'){
+        url = 'https://betcityru.com/ru/line/bets?sp%5B%5D=3&ts=1';
+    }
+    else if(sport == 'volleyball'){
+        url = 'https://betcityru.com/ru/line/bets?sp%5B%5D=12&ts=1';
+    }
+    else if(sport == 'tennis'){
+        url = 'https://betcityru.com/ru/line/bets?sp%5B%5D=2&ts=1';
+    }
+
+
+
     document.querySelectorAll('.active-chat').forEach(chat => {
         activeChats.push(chat.textContent);
     })
     let data = {
         name: document.querySelector('input[name="name"]').value,
-        sport: document.querySelector('.sport').value,
+        sport: sport,
+        url: url,
         chats: activeChats,
         difference: [
             +document.querySelector('#difference-from').value, 
