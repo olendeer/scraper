@@ -409,6 +409,15 @@ async function scrapSportLive(events, filter){
 		})
 	}
 
+
+
+
+
+
+
+
+
+	//dfg
 	// Promise.all(events).then(async results => {
 	// 	for(result of results){
 	// 		console.log(result.result.operation)
