@@ -10,29 +10,52 @@ const PORT = process.env.PORT || 3000;
 const TOKEN = '1178068165:AAHnNRDsp3s1tS9ViIw7DoRwBqFTmFUZVSY';
 
 const app = express();
-const bot = new TelegramBot(TOKEN, {
-	polling: true
-})
+// const bot = new TelegramBot(TOKEN, {
+// 	polling: true
+// })
 
-bot.on('message', msg => {
-	console.log(msg.text);
-	if(msg.text == 'love'){
-		bot.sendMessage(msg.chat.id, 'Зайка, я тебя люблю больше всего на свете!!!Твой любимый муж)')
-		.then(res => console.log(res))
-	}
-})
+// bot.on('message', msg => {
+// 	console.log(msg.text);
+// 	if(msg.text == 'love'){
+// 		bot.sendMessage(msg.chat.id, 'Зайка, я тебя люблю больше всего на свете!!!Твой любимый муж)')
+// 		.then(res => console.log(res))
+// 	}
+// })
+
+async function getProxy(){
+	const browser = await puppeteer.launch({headless: false, args: ['--no-sandbox'], ignoreDefaultArgs: ['--disable-extensions']});
+	const page = await browser.newPage();
+	await page.goto('https://hidemy.name/ru/proxy-list/?maxtime=1500&type=h#list')
+	.catch(error => {
+		console.log('Error go to page')
+		browser.close();
+	})
+	await page.waitForSelector('.services .table_block table tbody tr');
+	let result = await page.evaluate(() => {
+		let proxyList = [];
+		document.querySelectorAll('.services .table_block table tbody tr').forEach(proxyLine => {
+			let ip = proxyLine.querySelectorAll('td');
+			proxyList.push({ip: ip[0].innerHTML, port: ip[1].innerHTML})
+		})
+		return proxyList;
+	})
+	browser.close();
+	return result;
+}
 
 cron.schedule('*/1 * * * *', async () => {
-	console.log('Start scraper line')
-	let countScraps = 0;
-	let filtersActive = await FilterItem.find({status: 'active'});
-		//Start scrape line
-		filtersActive.forEach(filter => {
-			scrapSportLine(filter.url, filter.sport)
-			.then(result => {
-				saveResultsLine(filter, result)
-			})
-		})
+	let proxys = await getProxy();
+	console.log(proxys);
+	// console.log('Start scraper line')
+	// let countScraps = 0;
+	// let filtersActive = await FilterItem.find({status: 'active'});
+	// 	//Start scrape line
+	// 	filtersActive.forEach(filter => {
+	// 		scrapSportLine(filter.url, filter.sport)
+	// 		.then(result => {
+	// 			saveResultsLine(filter, result)
+	// 		})
+	// 	})
 		
 	// let startScrape = setInterval(() => {
 	// 	console.log('Start scraper live events')
@@ -350,8 +373,8 @@ async function start(){
 		app.listen(PORT, () => {
 			console.log('Server has been started...');
 		});
-		await mongoose.connect('mongodb+srv://olendeer:1029384756qazqwertyuiop@scraper-7vfov.mongodb.net/test?retryWrites=true&w=majority', {useNewUrlParser: true, useUnifiedTopology: true});
-		console.log('Set connetion to data base');
+		// await mongoose.connect('mongodb+srv://olendeer:1029384756qazqwertyuiop@scraper-7vfov.mongodb.net/test?retryWrites=true&w=majority', {useNewUrlParser: true, useUnifiedTopology: true});
+		// console.log('Set connetion to data base');
 
 	}catch(e){
 		console.log(e)
