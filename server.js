@@ -32,14 +32,14 @@ bot.on('message', msg => {
 // 		browser.close();
 // 	})
 // 	await page.waitForSelector('.services .table_block table tbody tr');
-// 	let result = await page.evaluate(() => {
-// 		let proxyList = [];
-// 		document.querySelectorAll('.services .table_block table tbody tr').forEach(proxyLine => {
-// 			let ip = proxyLine.querySelectorAll('td');
-// 			proxyList.push({ip: ip[0].innerHTML, port: ip[1].innerHTML})
-// 		})
-// 		return proxyList;
-// 	})
+	// let result = await page.evaluate(() => {
+	// 	let proxyList = [];
+	// 	document.querySelectorAll('.services .table_block table tbody tr').forEach(proxyLine => {
+	// 		let ip = proxyLine.querySelectorAll('td');
+	// 		proxyList.push({ip: ip[0].innerHTML, port: ip[1].innerHTML})
+	// 	})
+	// 	return proxyList;
+	// })
 // 	console.log(result)
 // 	browser.close();
 // 	return result;
@@ -54,7 +54,16 @@ bot.on('message', msg => {
 // 	return proxys[activeProxy];
 // }
 
+String.prototype.hex2bin = function()
+{ 
+   var i = 0, len = this.length, result = "";
 
+   //Converting the hex string into an escaped string, so if the hex string is "a2b320", it will become "%a2%b3%20"
+   for(; i < len; i+=2)
+      result += '%' + this.substr(i, 2);      
+
+   return unescape(result);
+}
 
 cron.schedule('*/1 * * * *', async () => {
 	// let proxys = await getProxy();
@@ -62,32 +71,32 @@ cron.schedule('*/1 * * * *', async () => {
 	console.log('Start scraper line')
 	// let countScraps = 0;
 	let filtersActive = await FilterItem.find({status: 'active'});
-		//Start scrape line
-		// filtersActive.forEach(filter => {
-		// 	scrapSportLine(filter.url, filter.sport)
-		// 	.then(result => {
-		// 		// console.log(result)
-		// 		saveResultsLine(filter, result)
-		// 	})
-		// })
+	// 	//Start scrape line
+		filtersActive.forEach(filter => {
+			scrapSportLine(filter.url, filter.sport)
+			.then(result => {
+				// console.log(result)
+				saveResultsLine(filter, result)
+			})
+		})
 		
-	// let startScrape = setInterval(() => {
+	let startScrape = setTimeout(() => {
 		// console.log('Start scraper live events')
-		// filtersActive.forEach(filter => {
-		// 	EventLineItem.find({live: true, sport: filter.sport, fora: {$gte: filter.fora[0], $lte: filter.fora[1]}, total: {$gte: filter.total[0], $lte: filter.total[1]}, coefficient: {$gte: filter.difference[0], $lte: filter.difference[1]}})
-		// 	.then(events => {
-		// 			scrapSportLive(events, filter)
-		// 			.then(result => {
-		// 				// console.log(result)
-		// 			})
-		// 	})
-		// })
+		filtersActive.forEach(filter => {
+			EventLineItem.find({live: true, sport: filter.sport, fora: {$gte: filter.fora[0], $lte: filter.fora[1]}, total: {$gte: filter.total[0], $lte: filter.total[1]}, coefficient: {$gte: filter.difference[0], $lte: filter.difference[1]}})
+			.then(events => {
+					scrapSportLive(events, filter)
+					.then(result => {
+						// console.log(result)
+					})
+			})
+		})
 		// countScraps ++;
 		// if(countScraps == 5){
 		// 	console.log('Cron reload');
 		// 	clearInterval(startScrape)
 		// }
-	// }, 3000);
+	}, 15000);
 });
 
 
@@ -118,6 +127,7 @@ async function scrapSportLine(url, sport, proxys){
 			let players = [];
 			let live;
 			let findEvent = {
+				bet: '',
 				time: 0,
 				live: false,
 				sendTelegramLive: false,
@@ -181,6 +191,7 @@ async function scrapSportLine(url, sport, proxys){
 		event.time = countTime(thisTime, event.time)
 		if(event.time < 30){
 			event.sport = sport;
+			event.bet = '#bet' + event.url.match(/[0-9]+\/[0-9]+/).join('0').replace('/', '');
 			return event;
 		}
 	})
@@ -265,6 +276,8 @@ async function saveResultsLine(filter, result){
 
 function sendTelegramLine(filter, event){
 	let html = `
+		${event.bet}
+
 		<strong>*${event.sport.toUpperCase()}*</strong>
 		<strong>*${event.leage}*</strong>
 		П1/П2 : ${event.coefficient}
@@ -299,34 +312,109 @@ function sendTelegramLine(filter, event){
 
 async function sendTelegramLive(event, filter, data){
 	let html;
-	if(data.stopRate){
-		html = `
-			<strong>*${event.sport.toUpperCase()}*</strong>
-			<strong>*${event.leage}*</strong>
+	if(event.sport == 'basketball'){
+		if(data.stopRate){
+			html = `
+				${event.bet}
 
-			Номер четверти: ${data.quart}
-			Счёт: ${data.score}
+				<strong>*${event.sport.toUpperCase()}*</strong>
+				<strong>*${event.leage}*</strong>
 
-			Приём ставок временно остоновлен
-		`;
-	}else{
-		html = `
-			<strong>*${event.sport.toUpperCase()}*</strong>
-			<strong>*${event.leage}*</strong>
+				Номер четверти: ${data.quart}
+				Счёт: ${data.score}
 
-			Счёт в текущей четверти : ${data.scoreCurrent}
-			Номер четверти: ${data.quart}
-			Счёт по четвертям: ${data.score}
-			Текущий тотал: ${data.currentTotal}
-			Текущая фора:  ${data.currentFora}
-			Фолы текущей четверти: ${data.foals}
-			Процент попадания общ: ${data.hit}
-			Время четверти в минутах и секундах: ${data.time}
-			Осталось набрать(Тотал): ${data.totalRemains}
-			Осталось набрать(Фора): ${data.foraRemains}
+				Приём ставок временно остановлен
+			`;
+		}else{
+			html = `
+				${event.bet}
 
-			Фильтр: ${filter.name}
-		`;
+				<strong>*${event.sport.toUpperCase()}*</strong>
+				<strong>*${event.leage}*</strong>
+
+				Счёт в текущей четверти : ${data.scoreCurrent}
+				Номер четверти: ${data.quart}
+				Счёт по четвертям: ${data.score}
+				Текущий тотал: ${data.currentTotal}
+				Текущая фора:  ${data.currentFora}
+				Фолы текущей четверти: ${data.foals}
+				Процент попадания общ: ${data.hit}
+				Время четверти в минутах и секундах: ${data.time}
+				Осталось набрать(Тотал): ${data.totalRemains}
+				Осталось набрать(Фора): ${data.foraRemains}
+
+				Фильтр: ${filter.name}
+			`;
+		}
+	}
+	else if(event.sport == 'volleyball'){
+		if(data.stopRate){
+			html = `
+				${event.bet}
+
+				<strong>*${event.sport.toUpperCase()}*</strong>
+				<strong>*${event.leage}*</strong>
+
+				Номер четверти: ${data.quart}
+				Счёт: ${data.points}
+
+				Приём ставок временно остановлен
+			`;
+		}else{
+			html = `
+				${event.bet}
+
+				<strong>*${event.sport.toUpperCase()}*</strong>
+				<strong>*${event.leage}*</strong>
+
+				Счёт текущего сета : ${data.pointsCurrent}
+				Cет: ${data.quart}
+				Счёт по сетам: ${data.points}
+				Текущий тотал: ${data.total}
+				Текущая фора:  ${data.currentFora}
+				На свои подачах: __:__
+				Подряд на своих: __:__
+				Осталось набрать(Тотал): ${data.totalRemains}
+				Осталось набрать(Фора): ${data.foraRemains}
+
+				Фильтр: ${filter.name}
+			`;
+		}
+	}
+	else if(event.sport == 'tennis'){
+		if(data.stopRate){
+			html = `
+				${event.bet}
+
+				<strong>*${event.sport.toUpperCase()}*</strong>
+				<strong>*${event.leage}*</strong>
+
+				Номер четверти: ${data.quart}
+				Счёт: ${data.points}
+
+				Приём ставок временно остановлен
+			`;
+		}else{
+			html = `
+				${event.bet}
+
+				<strong>*${event.sport.toUpperCase()}*</strong>
+				<strong>*${event.leage}*</strong>
+
+				Счёт текущего сета : ${data.pointsCurrent}
+				Счёт по сетам: ${data.points}
+				Текущий тотал: ${data.total}
+				Текущая фора:  ${data.currentFora}
+				Эйсы: ${data.ices}
+				Двойные ошибки: ${data.errorTwo}
+				% выигранных очков на первой подаче: __:__
+				Реализация брейкпоинтов: ${data.breaks}
+				Осталось набрать(Тотал): ${data.totalRemains}
+				Осталось набрать(Фора): ${data.foraRemains}
+
+				Фильтр: ${filter.name}
+			`;
+		}
 	}
 	for(chat of filter.chats){
 		let messageIds = await ChannelItem.findOne({name: chat})
@@ -346,12 +434,31 @@ async function sendTelegramLive(event, filter, data){
 			})
 			.then(message => {
 				return {
-					chatId: message.chat.username,
+					chatId: message.chat.id,
 					messageId: message.message_id
 				}
 			})
-			.catch(error => {
-				console.log('Error send');
+			.catch(async error => {
+				// console.log('Error send');
+				return await bot.sendMessage('@' + chat.chatId, html,{
+					parse_mode: 'HTML',
+					reply_markup: {
+						inline_keyboard:[
+							[
+								{
+									text: 'Ссылка',
+									url : event.url
+								}
+							]
+						]
+					}
+				})
+				.then(message => {
+					return {
+						chatId: message.chat.id,
+						messageId: message.message_id
+					}
+				})
 			})
 		})
 		event.messageIds.push(messageIds);
@@ -363,12 +470,19 @@ async function sendTelegramLive(event, filter, data){
 
 function sendReportTelegram(filter, event){
 	let html = `
+		${event.bet}
+
 		<strong>Отчёт</strong>
 		Вид спорта: ${event.sport}
 		Название игры: -
 		Лига:${event.leage}
 		Фильтр: ${filter.name}
 
+		Четверть: __
+		Ставка: __
+		Результат: __
+		Коэффициент: __
+		Состояние: __
 	`;
 	filter.chats.forEach(chat => {
 		ChannelItem.findOne({name: chat})
@@ -392,40 +506,119 @@ function sendReportTelegram(filter, event){
 		})
 	})
 }
-
-function updateTelegramLive(event, filter, data){
+async function updateTelegramLive(event, filter, data){
+	console.log('update')
 	let html;
-	if(data.stopRate){
-		html = `
-			<strong>*${event.sport.toUpperCase()}*</strong>
-			<strong>*${event.leage}*</strong>
+	if(event.sport == 'basketball'){
+		if(data.stopRate){
+			html = `
+				${event.bet}
 
-			Номер четверти: ${data.quart}
-			Счёт: ${data.score}
+				<strong>*${event.sport.toUpperCase()}*</strong>
+				<strong>*${event.leage}*</strong>
 
-			Приём ставок временно остановлен
-		`;
-	}else{
-		html = `
-			<strong>*${event.sport.toUpperCase()}*</strong>
-			<strong>*${event.leage}*</strong>
+				Номер четверти: ${data.quart}
+				Счёт: ${data.score}
 
-			Счёт в текущей четверти : ${data.scoreCurrent}
-			Номер четверти: ${data.quart}
-			Счёт по четвертям: ${data.score}
-			Текущий тотал: ${data.currentTotal}
-			Текущая фора:  ${data.currentFora}
-			Фолы текущей четверти: ${data.foals}
-			Процент попадания общ: ${data.hit}
-			Время четверти в минутах и секундах: ${data.time}
-			Осталось набрать(Тотал): ${data.totalRemains}
-			Осталось набрать(Фора): ${data.foraRemains}
+				Приём ставок временно остановлен
+			`;
+		}else{
+			html = `
+				${event.bet}
 
-			Фильтр: ${filter.name}
-		`;
+				<strong>*${event.sport.toUpperCase()}*</strong>
+				<strong>*${event.leage}*</strong>
+
+				Счёт в текущей четверти : ${data.scoreCurrent}
+				Номер четверти: ${data.quart}
+				Счёт по четвертям: ${data.score}
+				Текущий тотал: ${data.currentTotal}
+				Текущая фора:  ${data.currentFora}
+				Фолы текущей четверти: ${data.foals}
+				Процент попадания общ: ${data.hit}
+				Время четверти в минутах и секундах: ${data.time}
+				Осталось набрать(Тотал): ${data.totalRemains}
+				Осталось набрать(Фора): ${data.foraRemains}
+
+				Фильтр: ${filter.name}
+			`;
+		}
 	}
-	event.messageIds.forEach(message => {
-		bot.editMessageText(html, {
+	else if(event.sport == 'volleyball'){
+		if(data.stopRate){
+			html = `
+				${event.bet}
+
+				<strong>*${event.sport.toUpperCase()}*</strong>
+				<strong>*${event.leage}*</strong>
+
+				Номер четверти: ${data.quart}
+				Счёт: ${data.points}
+
+				Приём ставок временно остановлен
+			`;
+		}else{
+			html = `
+				${event.bet}
+
+				<strong>*${event.sport.toUpperCase()}*</strong>
+				<strong>*${event.leage}*</strong>
+
+				Счёт текущего сета : ${data.pointsCurrent}
+				Cет: ${data.quart}
+				Счёт по сетам: ${data.points}
+				Текущий тотал: ${data.total}
+				Текущая фора:  ${data.currentFora}
+				На свои подачах: __:__
+				Подряд на своих: __:__
+				Осталось набрать(Тотал): ${data.totalRemains}
+				Осталось набрать(Фора): ${data.foraRemains}
+
+				Фильтр: ${filter.name}
+			`;
+		}
+	}
+	else if(event.sport == 'tennis'){
+		if(data.stopRate){
+			html = `
+				${event.bet}
+
+				<strong>*${event.sport.toUpperCase()}*</strong>
+				<strong>*${event.leage}*</strong>
+
+				Номер четверти: ${data.quart}
+				Счёт: ${data.points}
+
+				Приём ставок временно остановлен
+			`;
+		}else{
+			html = `
+				${event.bet}
+
+				<strong>*${event.sport.toUpperCase()}*</strong>
+				<strong>*${event.leage}*</strong>
+
+				Счёт текущего сета : ${data.pointsCurrent}
+				Счёт по сетам: ${data.points}
+				Текущий тотал: ${data.total}
+				Текущая фора:  ${data.currentFora}
+				Эйсы: ${data.ices}
+				Двойные ошибки: ${data.errorTwo}
+				% выигранных очков на первой подаче: __:__
+				Реализация брейкпоинтов: ${data.breaks}
+				Осталось набрать(Тотал): ${data.totalRemains}
+				Осталось набрать(Фора): ${data.foraRemains}
+
+				Фильтр: ${filter.name}
+			`;
+		}
+	}
+	// console.log(event.messageIds
+	for(message of event.messageIds){
+		if(message == null){
+			return false;
+		}
+		await bot.editMessageText(html, {
 			chat_id: message.chatId,
 			message_id: message.messageId,
 			parse_mode: 'HTML',
@@ -440,12 +633,34 @@ function updateTelegramLive(event, filter, data){
 				]
 			}
 		})
-		.catch(error => {
-			console.log(error)
+		.then(() => false)
+		.catch(async error => {
+			return await bot.editMessageText(html, {
+				chat_id: message.chatId,
+				message_id: message.messageId,
+				parse_mode: 'HTML',
+				reply_markup: {
+					inline_keyboard:[
+						[
+							{
+								text: 'Ссылка',
+								url : event.url
+							}
+						]
+					]
+				}
+			})
+			.then(() => false)
+			.catch(error => {
+				return false;
+			})
 		})
-	})
+	}
 }
-
+// bot.editMessageText('update', {
+// 	chat_id: 'olendeerTest',
+// 	message_id: 430
+// })
 async function start(){
 	try{
 		app.listen(PORT, () => {
@@ -506,7 +721,7 @@ async function scrapSportLive(events, filter){
 	for(event of events){
 		await scrapSportLivePage(event, browser, page)
 		.then( async result => {
-			console.log(result.result.operation)
+			// console.log(result.result.operation)
 			if(result.result.operation == 'delete'){
 				let finishEventItem = new FinishEventItem({
 					filter: filter.name,
@@ -550,6 +765,14 @@ async function scrapSportLivePage(event, browser, page){
 		// browser.close();
 		// resolve('Error');
 	})
+	if(!response){
+		// browser.close();
+		return {
+			result : {
+				operation : 'Redirect'
+			}
+		}
+	}
 	let chain = response.request().redirectChain();
 	if(chain.length > 0){
 		response = false;
@@ -558,7 +781,7 @@ async function scrapSportLivePage(event, browser, page){
 		// browser.close();
 		return {
 			result : {
-				operation : false
+				operation : 'Redirect'
 			}
 		}
 	}
@@ -652,7 +875,13 @@ async function scrapSportLivePage(event, browser, page){
 							})
 						}
 						foals = foals.join(':');
-						let time = document.querySelector('.scoreboard-content__info span').innerHTML
+						let time = document.querySelector('.scoreboard-content__info span');
+						if(time != null){
+							time = time.innerHTML
+						}
+						else{
+							time = 'На начата'
+						}
 						return {
 							operation: 'update',
 							data: {
@@ -673,37 +902,218 @@ async function scrapSportLivePage(event, browser, page){
 				}
 			}
 			else if(score == null){
-				//Если активный теннис или волейбол
-				let quart = document.querySelector('.scoreboard-content__info b').innerHTML;
-				quart = +quart.match(/\d/)[0];
-				let stopRate = document.querySelector('.esm');
-				let pointsCurrent = document.querySelectorAll('.scoreboard-content__cell div');
-				pointsCurrent = pointsCurrent[quart].innerHTML + ':' + pointsCurrent[quart * 2 + 2].innerHTML
-				if(stopRate != null){
+				let quart = document.querySelector('.scoreboard-content__info').innerHTML.trim();
+				if(quart == 'Событие завершено'){
+					//если матч завершён
 					return {
-						operation: 'update',
+						operation: 'delete',
 						data: {
-							pointsCurrent: pointsCurrent,
-							quart: quart,
-							stopRate: true
+							score: 'Результат не указан'
+						}
+					};
+				}
+				//Если активный теннис или волейбол
+				if(document.querySelector('.scoreboard-header__champ-name span').innerHTML == 'Волейбол'){
+					let quart = document.querySelector('.scoreboard-content__info b').innerHTML;
+					quart = +quart.match(/\d/)[0];
+					let stopRate = document.querySelector('.esm');
+					let pointsCurrentAll = document.querySelectorAll('.scoreboard-content__cell div');
+					let pointsCurrentTemp = [];
+					pointsCurrentAll.forEach(elem => {
+						if(elem.innerHTML != ''){
+							pointsCurrentTemp.push(+elem.innerHTML);
+						}
+					})
+					let pointsCurrent = pointsCurrentTemp[quart] + ':' + pointsCurrentTemp[quart * 2 + 1];
+					// pointsCurrent = pointsCurrentTemp.length;
+					let points = pointsCurrentAll[0].innerHTML + ':' + pointsCurrentAll[6].innerHTML;
+					if(stopRate != null){
+						return {
+							operation: 'update',
+							data: {
+								pointsCurrent: pointsCurrent,
+								quart: quart,
+								points: points,
+								stopRate: true
+							}
+						}
+					}
+					else{
+						let totalSet = pointsCurrentTemp[quart] + pointsCurrentTemp[quart * 2 + 1] + 0.5;
+						let total = 0;
+						for(let i = 0; i < pointsCurrentAll.length; i++){
+							if(i != 0 && i != 6){
+								total += +pointsCurrentAll[i].innerHTML;
+							}
+						}
+						total += 0.5;
+						let currentFora = 0;
+						let tempFora;
+						let totalRemainsAll;
+						let totalRemains = [];
+						let totalRemainsVal = 0;
+						let tempTotalRemains;
+						document.querySelectorAll('.dops-item').forEach(elem => {
+							if(elem.querySelector('.dops-item__title > span').innerHTML == 'Фора'){
+								let currentForaAll = elem.querySelectorAll('.dops-item-row__block-left');
+								currentForaAll.forEach(elem => {
+									tempFora = +elem.innerHTML.replace(/\).*/, '').replace(/.*\(/, '');
+									if(tempFora < 0){
+										tempFora = -tempFora;
+									}
+									currentFora += tempFora;
+								});
+								currentFora = currentFora/currentForaAll.length
+							}
+							else if(elem.querySelector('.dops-item__title > span').innerHTML == 'Тотал'){
+								totalRemainsAll = elem.querySelectorAll('.dops-item-row__block-content');
+								totalRemainsAll.forEach(elem => {
+									tempTotalRemains = elem.innerHTML.replace(/ /, '').match(/span/);
+									if(tempTotalRemains == null){
+										totalRemains.push(+elem.innerHTML.replace(/ /, ''));
+									}
+								});
+								totalRemains.forEach(elem => {
+									totalRemainsVal += elem;
+								});
+								totalRemainsVal = totalRemainsVal/totalRemains.length - total;
+							}
+						})
+						let foraRemains = currentFora - (Math.max(pointsCurrentTemp[quart], pointsCurrentTemp[quart * 2 + 1]) - Math.min(pointsCurrentTemp[quart], pointsCurrentTemp[quart * 2 + 1]));
+						return {
+							operation: 'update',
+							data: {
+								pointsCurrent: pointsCurrent,
+								quart: quart,
+								points: points,
+								totalSet: totalSet,
+								total: total,
+								currentFora: currentFora,
+								totalRemains: totalRemainsVal,
+								foraRemains: foraRemains,
+								stopRate: false
+							}
 						}
 					}
 				}
-				else{
-					return {
-						operation: 'update',
-						data: {
-							pointsCurrent: pointsCurrent,
-							quart: quart,
-							stopRate: false
+				else if(document.querySelector('.scoreboard-header__champ-name span').innerHTML == 'Теннис'){
+					let quart = document.querySelector('.scoreboard-content__info b');
+					let pointsCurrent;
+					let points;
+					let pointsCurrentAll;
+					let pointsCurrentTemp;
+					if(quart != null){
+						quart = quart.innerHTML
+						quart = +quart.match(/\d/)[0];
+						pointsCurrentAll = document.querySelectorAll('.scoreboard-content__cell div');
+						pointsCurrentTemp = [];
+						pointsCurrentAll.forEach(elem => {
+							if(elem.innerHTML != ''){
+								pointsCurrentTemp.push(+elem.innerHTML);
+							}
+						})
+						pointsCurrent = pointsCurrentTemp[quart + 1] + ':' + pointsCurrentTemp[(quart + 1) * 2 + 1];
+						points = pointsCurrentAll[0].innerHTML + ':' + pointsCurrentAll[5].innerHTML;
+					}
+					else{
+						quart = 'Нет информации'
+						pointsCurrent = 'Нет информации'
+						points = 'Нет информации'
+					}
+					let stopRate = document.querySelector('.esm');
+					if(stopRate != null){
+						return {
+							operation: 'update',
+							data: {
+								pointsCurrent: pointsCurrent,
+								quart: quart,
+								points: points,
+								stopRate: true
+							}
 						}
+					}
+					else{
+						let total = 0;
+						for(let i = 0; i < pointsCurrentAll.length; i++){
+							if(i != 0 && i != 6 && i != 1 && i != 5){
+								total += +pointsCurrentAll[i].innerHTML;
+							}
+						}
+						total += 0.5;
+						let currentFora = 0;
+						let tempFora;
+						let totalRemainsAll;
+						let totalRemains = [];
+						let totalRemainsVal = 0;
+						let tempTotalRemains;
+						document.querySelectorAll('.dops-item').forEach(elem => {
+							if(elem.querySelector('.dops-item__title > span').innerHTML == 'Фора'){
+								let currentForaAll = elem.querySelectorAll('.dops-item-row__block-left');
+								// currentFora = currentFora[0].innerHTML
+								currentForaAll.forEach(elem => {
+									tempFora = +elem.innerHTML.replace(/\).*/, '').replace(/.*\(/, '');
+									if(tempFora < 0){
+										tempFora = -tempFora;
+									}
+									currentFora += tempFora;
+								});
+								currentFora = currentFora/currentForaAll.length
+							}
+							else if(elem.querySelector('.dops-item__title > span').innerHTML == 'Тотал'){
+								totalRemainsAll = elem.querySelectorAll('.dops-item-row__block-content');
+								totalRemainsAll.forEach(elem => {
+									tempTotalRemains = elem.innerHTML.replace(/ /, '').match(/span/);
+									if(tempTotalRemains == null){
+										totalRemains.push(+elem.innerHTML.replace(/ /, ''));
+									}
+								});
+								totalRemains.forEach(elem => {
+									totalRemainsVal += elem;
+								});
+								totalRemainsVal = totalRemainsVal/totalRemains.length - total;
+							}
+						});
+						let foraRemains = currentFora - (Math.max(pointsCurrentTemp[quart + 1], pointsCurrentTemp[(quart + 1) * 2 + 1]) - Math.min(pointsCurrentTemp[quart + 1], pointsCurrentTemp[(quart + 1) * 2 + 1]));
+						let ices = '0:0';
+						let errorTwo = '0:0';
+						let breaks = '0:0';
+						let statItems = document.querySelectorAll('.livestat-tennis-info__item span');
+						if(statItems.length > 0){
+							ices = statItems[0].innerHTML + ':' + statItems[2].innerHTML; 
+							errorTwo = statItems[3].innerHTML + ':' + statItems[5].innerHTML; 
+							breaks = statItems[6].innerHTML + ':' + statItems[8].innerHTML; 	
+						}
+						return {
+							operation: 'update',
+							data: {
+								pointsCurrent: pointsCurrent,
+								quart: quart,
+								points: points,
+								total: total,
+								currentFora: currentFora,
+								ices: ices,
+								errorTwo: errorTwo,
+								breaks: breaks,
+								totalRemains: totalRemainsVal,
+								foraRemains: foraRemains,
+								stopRate: false
+							}
+						}
+					}
+					return{
+						operation: 'send'
 					}
 				}
 			}
 			else{
 				return {
-					operation: false
+					operation: 'Error score'
 				}
+			}
+		})
+		.catch(error => {
+			return {
+				operation: 'Error on page'
 			}
 		})
 		return {
@@ -720,32 +1130,6 @@ async function scrapSportLivePage(event, browser, page){
 			}
 		}
 	}
-		// let result = await page.evaluate(() => {
-		// 	let score =	document.querySelector('.scoreboard-content__previous-score');
-		// 	if(score != undefined){
-		// 		let quart = document.querySelector('.scoreboard-content__info').innerHTML.trim();
-		// 		if(quart == 'Событие завершено'){
-		// 			return quart;
-		// 		}
-		// 		else{
-		// 			//Поиск остальных данных
-		// 			score = score.innerHTML;
-		// 			return score;
-		// 		}
-		// 	}
-		// 	else{
-		// 		return false;
-		// 	}
-		// 	return score.innerHTML;
-		// })
-		// // console.log(result)
-		// await page.close();
-		// return result;
-	// }
-	// else{
-	// 	await page.close();
-	// 	resolve('Redirect');
-	// }
 }
 
 
@@ -765,6 +1149,7 @@ let Filter = mongoose.Schema({
 });
 
 let EventLine = mongoose.Schema({
+	bet: String,
 	time: Number,
 	live : Boolean,
 	sendTelegramLive: Boolean,
@@ -803,7 +1188,8 @@ async function qwe(){
 	const browser = await puppeteer.launch({headless: false, args: ['--no-sandbox'], ignoreDefaultArgs: ['--disable-extensions']});
 	let page = await browser.newPage();
 	let event = {
-		url : 'https://betcityru.com/ru/live/volleyball/141273/7008881'
+		url : 'https://betcityru.com/ru/live/tennis/142823/7010302',
+		sport : 'tennis'
 	}
 	let filter = await FilterItem.findOne({sport: 'basketball'});
 	await scrapSportLivePage(event, browser, page)
@@ -824,7 +1210,7 @@ async function qwe(){
 				await EventLineItem.deleteOne({url: result.event.url})
 			}
 			else if(result.result.operation == 'update'){
-				console.log(result.result.data)
+				// console.log(result.result.data)
 				if(result.event.sendTelegramLive == false){
 					result.event.sendTelegramLive = true;
 					event = await sendTelegramLive(result.event, filter, result.result.data);
@@ -837,7 +1223,7 @@ async function qwe(){
 		})
 }
 
-qwe();
+// qwe();
 
 
 
