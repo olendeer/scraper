@@ -72,23 +72,23 @@ cron.schedule('*/1 * * * *', async () => {
 			})
 		})
 		
-	let startScrape = setTimeout(() => {
-		// console.log('Start scraper live events')
-		filtersActive.forEach(filter => {
-			EventLineItem.find({live: true, sport: filter.sport, fora: {$gte: filter.fora[0], $lte: filter.fora[1]}, total: {$gte: filter.total[0], $lte: filter.total[1]}, coefficient: {$gte: filter.difference[0], $lte: filter.difference[1]}})
-			.then(events => {
-					scrapSportLive(events, filter)
-					.then(result => {
-						// console.log(result)
-					})
-			})
-		})
-		// countScraps ++;
-		// if(countScraps == 5){
-		// 	console.log('Cron reload');
-		// 	clearInterval(startScrape)
-		// }
-	}, 15000);
+	// let startScrape = setTimeout(() => {
+	// 	// console.log('Start scraper live events')
+	// 	filtersActive.forEach(filter => {
+	// 		EventLineItem.find({live: true, sport: filter.sport, fora: {$gte: filter.fora[0], $lte: filter.fora[1]}, total: {$gte: filter.total[0], $lte: filter.total[1]}, coefficient: {$gte: filter.difference[0], $lte: filter.difference[1]}})
+	// 		.then(events => {
+	// 				scrapSportLive(events, filter)
+	// 				.then(result => {
+	// 					// console.log(result)
+	// 				})
+	// 		})
+	// 	})
+	// 	// countScraps ++;
+	// 	// if(countScraps == 5){
+	// 	// 	console.log('Cron reload');
+	// 	// 	clearInterval(startScrape)
+	// 	// }
+	// }, 15000);
 });
 
 
@@ -97,12 +97,12 @@ cron.schedule('*/1 * * * *', async () => {
 
 async function scrapSportLine(url, sport, proxys){
 	// let proxy = newProxy(proxys);
-	const browser = await puppeteer.launch({headless: false, args: ['--no-sandbox'], ignoreDefaultArgs: ['--disable-extensions']});
+	const browser = await puppeteer.launch({headless: true, args: ['--no-sandbox'], ignoreDefaultArgs: ['--disable-extensions']});
 	const page = await browser.newPage();
-	// process.on('unhandledRejection', (reason, p) => {
-	//     console.error('Unhandled Rejection at: Promise', p, 'reason:', reason);
-	//     browser.close();
-	//   });
+	process.on('unhandledRejection', (reason, p) => {
+	    // console.error('Unhandled Rejection at: Promise', p, 'reason:', reason);
+	    browser.close();
+	  });
 	await page.goto(url)
 	.catch(error => {
 		console.log(error);
