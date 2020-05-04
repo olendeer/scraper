@@ -97,7 +97,7 @@ cron.schedule('*/1 * * * *', async () => {
 
 async function scrapSportLine(url, sport, proxys){
 	// let proxy = newProxy(proxys);
-	const browser = await puppeteer.launch({headless: true, args: ['--no-sandbox'], ignoreDefaultArgs: ['--disable-extensions']});
+	const browser = await puppeteer.launch({headless: false, args: ['--no-sandbox'], ignoreDefaultArgs: ['--disable-extensions']});
 	const page = await browser.newPage();
 	// process.on('unhandledRejection', (reason, p) => {
 	//     console.error('Unhandled Rejection at: Promise', p, 'reason:', reason);
@@ -701,7 +701,7 @@ async function saveResultsLine(filter, result){
 
 
 async function scrapSportLive(events, filter){
-	const browser = await puppeteer.launch({headless: true, args: ['--no-sandbox'], ignoreDefaultArgs: ['--disable-extensions']});
+	const browser = await puppeteer.launch({headless: false, args: ['--no-sandbox'], ignoreDefaultArgs: ['--disable-extensions']});
 	let page = await browser.newPage();
 	// process.on('unhandledRejection', (reason, p) => {
 	//     console.error('Unhandled Rejection at: Promise', p, 'reason:', reason);
