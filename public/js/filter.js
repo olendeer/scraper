@@ -43,40 +43,190 @@ document.querySelector('.save').addEventListener('click', function(){
     let activeChats = [];
     let url;
     let sport = document.querySelector('.sport').value;
+    let data;
     if(sport == 'basketball'){
         url = 'https://betcityru.com/ru/line/bets?sp%5B%5D=3&ts=1';
+        data = {
+            name: document.querySelector('input[name="name"]').value,
+            sport: sport,
+            url: url,
+            chats: activeChats,
+            difference: [
+                +document.querySelector('#difference-from').value, 
+                +document.querySelector('#difference-to').value
+            ],
+            fora: [
+                +document.querySelector('#fora-from').value, 
+                +document.querySelector('#fora-to').value
+            ],
+            total: [
+                +document.querySelector('#total-from').value, 
+                +document.querySelector('#total-to').value
+            ],
+            status: document.querySelector('.status').value,
+            currentScore: [
+                +document.querySelector('#score-from-bask').value, 
+                +document.querySelector('#score-to-bask').value
+            ],
+            quart:[
+                +document.querySelector('#number-quarters-from-bask').value, 
+                +document.querySelector('#number-quarters-to-bask').value
+            ],
+            score: [
+                +document.querySelector('#score-quarters-from-bask').value, 
+                +document.querySelector('#score-quarters-to-bask').value
+            ],
+            currentTotal : [
+                +document.querySelector('#current-total-from-bask').value, 
+                +document.querySelector('#current-total-to-bask').value
+            ],
+            currentFora: [
+                +document.querySelector('#current-fora-from-bask').value, 
+                +document.querySelector('#current-fora-to-bask').value
+            ],
+            time: [
+                document.querySelector('#time-quarters-from-bask').value, 
+                document.querySelector('#time-quarters-to-bask').value
+            ],
+            totalRemains: [
+                +document.querySelector('#remained-total-from-bask').value, 
+                +document.querySelector('#remained-total-to-bask').value
+            ],
+            foraRemains: [
+                +document.querySelector('#remained-fora-from-bask').value, 
+                +document.querySelector('#remained-fora-to-bask').value
+            ],
+            foals: [
+                +document.querySelector('#folls-from-bask').value, 
+                +document.querySelector('#folls-to-bask').value
+            ],
+            hits: [
+                +document.querySelector('#hits-from-bask').value, 
+                +document.querySelector('#hits-to-bask').value
+            ]
+        }
     }
     else if(sport == 'volleyball'){
         url = 'https://betcityru.com/ru/line/bets?sp%5B%5D=12&ts=1';
+        data = {
+            name: document.querySelector('input[name="name"]').value,
+            sport: sport,
+            url: url,
+            chats: activeChats,
+            difference: [
+                +document.querySelector('#difference-from').value, 
+                +document.querySelector('#difference-to').value
+            ],
+            fora: [
+                +document.querySelector('#fora-from').value, 
+                +document.querySelector('#fora-to').value
+            ],
+            total: [
+                +document.querySelector('#total-from').value, 
+                +document.querySelector('#total-to').value
+            ],
+            status: document.querySelector('.status').value,
+            currentScore: [
+                +document.querySelector('#score-from-vol').value, 
+                +document.querySelector('#score-to-vol').value
+            ],
+            quart:[
+                +document.querySelector('#number-quarters-from-vol').value, 
+                +document.querySelector('#number-quarters-to-vol').value
+            ],
+            score: [
+                +document.querySelector('#score-quarters-from-vol').value, 
+                +document.querySelector('#score-quarters-to-vol').value
+            ],
+            currentTotal : [
+                +document.querySelector('#current-total-from-vol').value, 
+                +document.querySelector('#current-total-to-vol').value
+            ],
+            total: [
+                +document.querySelector('#overall-total-from-vol').value, 
+                +document.querySelector('#overall-total-to-vol').value
+            ],
+            supply: [
+                document.querySelector('#supply-from-vol').value, 
+                document.querySelector('#supply-to-vol').value
+            ],
+            supplyContract: [
+                +document.querySelector('#contract-supply-from-vol').value, 
+                +document.querySelector('#contract-supply-to-vol').value
+            ],
+            totalRemains: [
+                +document.querySelector('#remained-total-from-vol').value, 
+                +document.querySelector('#remained-total-to-vol').value
+            ],
+            foraRemains: [
+                +document.querySelector('#remained-fora-from-vol').value, 
+                +document.querySelector('#remained-fora-to-vol').value
+            ],
+        }
     }
     else if(sport == 'tennis'){
         url = 'https://betcityru.com/ru/line/bets?sp%5B%5D=2&ts=1';
+        data = {
+            name: document.querySelector('input[name="name"]').value,
+            sport: sport,
+            url: url,
+            chats: activeChats,
+            difference: [
+                +document.querySelector('#difference-from').value, 
+                +document.querySelector('#difference-to').value
+            ],
+            fora: [
+                +document.querySelector('#fora-from').value, 
+                +document.querySelector('#fora-to').value
+            ],
+            total: [
+                +document.querySelector('#total-from').value, 
+                +document.querySelector('#total-to').value
+            ],
+            status: document.querySelector('.status').value,
+            currentScore: [
+                +document.querySelector('#score-from-ten').value, 
+                +document.querySelector('#score-to-ten').value
+            ],
+            quart:[
+                +document.querySelector('#number-quarters-from-ten').value, 
+                +document.querySelector('#number-quarters-to-ten').value
+            ],
+            score: [
+                +document.querySelector('#score-quarters-from-ten').value, 
+                +document.querySelector('#score-quarters-to-ten').value
+            ],
+            currentTotal : [
+                +document.querySelector('#current-total-from-ten').value, 
+                +document.querySelector('#current-total-to-ten').value
+            ],
+            totalRemains: [
+                +document.querySelector('#remained-from-ten').value, 
+                +document.querySelector('#remained-to-ten').value
+            ],
+            ices: [
+                document.querySelector('#ice-from-ten').value, 
+                document.querySelector('#ice-to-ten').value
+            ],
+            errors: [
+                +document.querySelector('#errors-from-ten').value, 
+                +document.querySelector('#errors-to-ten').value
+            ],
+            percent: [
+                +document.querySelector('#percent-from-ten').value, 
+                +document.querySelector('#percent-to-ten').value
+            ],
+            breaks: [
+                +document.querySelector('#break-from-ten').value, 
+                +document.querySelector('#break-to-ten').value
+            ]
+        }
     }
-
 
 
     document.querySelectorAll('.active-chat').forEach(chat => {
         activeChats.push(chat.textContent);
     })
-    let data = {
-        name: document.querySelector('input[name="name"]').value,
-        sport: sport,
-        url: url,
-        chats: activeChats,
-        difference: [
-            +document.querySelector('#difference-from').value, 
-            +document.querySelector('#difference-to').value
-        ],
-        fora: [
-            +document.querySelector('#fora-from').value, 
-            +document.querySelector('#fora-to').value
-        ],
-        total: [
-            +document.querySelector('#total-from').value, 
-            +document.querySelector('#total-to').value
-        ],
-        status: document.querySelector('.status').value,
-    }
     fetch('/saveFilter', {
         method: 'post',
         headers:{

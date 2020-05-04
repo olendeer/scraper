@@ -105,8 +105,7 @@ cron.schedule('*/1 * * * *', async () => {
 
 async function scrapSportLine(url, sport, proxys){
 	// let proxy = newProxy(proxys);
-	// console.log(proxy)
-	const browser = await puppeteer.launch({headless: false, args: ['--no-sandbox'], ignoreDefaultArgs: ['--disable-extensions']});
+	const browser = await puppeteer.launch({headless: true, args: ['--no-sandbox'], ignoreDefaultArgs: ['--disable-extensions']});
 	const page = await browser.newPage();
 	// process.on('unhandledRejection', (reason, p) => {
 	//     console.error('Unhandled Rejection at: Promise', p, 'reason:', reason);
@@ -710,7 +709,7 @@ async function saveResultsLine(filter, result){
 
 
 async function scrapSportLive(events, filter){
-	const browser = await puppeteer.launch({headless: false, args: ['--no-sandbox'], ignoreDefaultArgs: ['--disable-extensions']});
+	const browser = await puppeteer.launch({headless: true, args: ['--no-sandbox'], ignoreDefaultArgs: ['--disable-extensions']});
 	let page = await browser.newPage();
 	// process.on('unhandledRejection', (reason, p) => {
 	//     console.error('Unhandled Rejection at: Promise', p, 'reason:', reason);
@@ -736,7 +735,7 @@ async function scrapSportLive(events, filter){
 				sendReportTelegram(filter, result.event);
 				await EventLineItem.deleteOne({url: result.event.url})
 			}
-			else if(result.result.operation == 'update'){
+			else if(result.result.operation == 'update' || result.result.operation == 'update-stop'){
 				if(result.event.sendTelegramLive == false){
 					result.event.sendTelegramLive = true;
 					event = await sendTelegramLive(result.event, filter, result.result.data);
@@ -816,7 +815,7 @@ async function scrapSportLivePage(event, browser, page){
 						quart = document.querySelector('.scoreboard-content__info b').innerHTML;
 						quart = +quart.match(/\d/)[0];
 						return {
-							operation: 'update',
+							operation: 'update-stop',
 							data: {
 								score: score,
 								quart: quart,
@@ -929,7 +928,7 @@ async function scrapSportLivePage(event, browser, page){
 					let points = pointsCurrentAll[0].innerHTML + ':' + pointsCurrentAll[6].innerHTML;
 					if(stopRate != null){
 						return {
-							operation: 'update',
+							operation: 'update-stop',
 							data: {
 								pointsCurrent: pointsCurrent,
 								quart: quart,
@@ -1023,7 +1022,7 @@ async function scrapSportLivePage(event, browser, page){
 					let stopRate = document.querySelector('.esm');
 					if(stopRate != null){
 						return {
-							operation: 'update',
+							operation: 'update-stop',
 							data: {
 								pointsCurrent: pointsCurrent,
 								quart: quart,
@@ -1100,9 +1099,6 @@ async function scrapSportLivePage(event, browser, page){
 							}
 						}
 					}
-					return{
-						operation: 'send'
-					}
 				}
 			}
 			else{
@@ -1116,6 +1112,19 @@ async function scrapSportLivePage(event, browser, page){
 				operation: 'Error on page'
 			}
 		})
+		// if(result.operation != 'delete' && result.operation != 'Error score' && result.operation != 'Error on page'){
+		// 	if(event.sport == 'basketball'){
+		// 		if(result.operation == 'update-stop'){
+					
+		// 		}
+		// 	}
+		// 	else if(event.sport == 'volleyball'){
+	
+		// 	}
+		// 	else if(event.sport == 'tennis'){
+	
+		// 	}
+		// }
 		return {
 			event: event,
 			result: result
@@ -1145,7 +1154,23 @@ let Filter = mongoose.Schema({
     difference: Array,
     fora: Array,
 	total: Array,
-	status: String
+	status: String,
+	currentScore: Array,
+	quart: Array,
+	score: Array,
+	currentTotal: Array,
+	currentFora: Array,
+	time: Array,
+	totalRemains: Array,
+	foraRemains: Array,
+	foals: Array,
+	hits: Array,
+	supply: Array,
+	supplyContract: Array,
+	ices: Array,
+	erros: Array,
+	percent: Array,
+	breaks: Array
 });
 
 let EventLine = mongoose.Schema({
@@ -1255,6 +1280,14 @@ app.post('/saveFilter', jsonParser, async (request, response) => {
 	if(request.body.fora[1] == 0){
 		request.body.fora[1] = 10000;
 	}
+	// request.body.forEach(elem => {
+	// 	if(elem[0] == undefined){
+	// 		elem[0] = 0;
+	// 	}
+	// 	if(elem[1] == undefined){
+	// 		elem[1] = 10000;
+	// 	}
+	// })
 	if(request.body.sport == 'none'){
 		request.body.status = 'inactive';
 	}
