@@ -15,14 +15,6 @@ const bot = new TelegramBot(TOKEN, {
 })
 
 
-bot.on('message', msg => {
-	console.log(msg.text);
-	if(msg.text == 'love'){
-		bot.sendMessage(msg.chat.id, 'Зайка, я тебя люблю больше всего на свете!!!Твой любимый муж)')
-		.then(res => console.log(res))
-	}
-})
-
 // async function getProxy(){
 // 	const browser = await puppeteer.launch({headless: false, args: ['--no-sandbox'], ignoreDefaultArgs: ['--disable-extensions']});
 // 	const page = await browser.newPage();
