@@ -46,34 +46,24 @@ const bot = new TelegramBot(TOKEN, {
 // 	return proxys[activeProxy];
 // }
 
-String.prototype.hex2bin = function()
-{ 
-   var i = 0, len = this.length, result = "";
 
-   //Converting the hex string into an escaped string, so if the hex string is "a2b320", it will become "%a2%b3%20"
-   for(; i < len; i+=2)
-      result += '%' + this.substr(i, 2);      
-
-   return unescape(result);
-}
 
 cron.schedule('*/1 * * * *', async () => {
 	// let proxys = await getProxy();
 	// console.log(proxys)
-	console.log('Start scraper line')
+	// console.log('Start scraper line')
 	// let countScraps = 0;
 	let filtersActive = await FilterItem.find({status: 'active'});
-	// 	//Start scrape line
+	// // 	//Start scrape line
 		filtersActive.forEach(filter => {
 			scrapSportLine(filter.url, filter.sport)
-			.then(result => {
-				// console.log(result)
+			.then(result => {	
 				saveResultsLine(filter, result)
 			})
 		})
 		
 	let startScrape = setTimeout(() => {
-		// console.log('Start scraper live events')
+	// // 	// console.log('Start scraper live events')
 		filtersActive.forEach(filter => {
 			EventLineItem.find({live: true, sport: filter.sport, fora: {$gte: filter.fora[0], $lte: filter.fora[1]}, total: {$gte: filter.total[0], $lte: filter.total[1]}, coefficient: {$gte: filter.difference[0], $lte: filter.difference[1]}})
 			.then(events => {
@@ -83,11 +73,11 @@ cron.schedule('*/1 * * * *', async () => {
 					})
 			})
 		})
-		// countScraps ++;
-		// if(countScraps == 5){
-		// 	console.log('Cron reload');
-		// 	clearInterval(startScrape)
-		// }
+	// // 	// countScraps ++;
+	// // 	// if(countScraps == 5){
+	// // 	// 	console.log('Cron reload');
+	// // 	// 	clearInterval(startScrape)
+	// // 	// }
 	}, 15000);
 });
 
@@ -97,7 +87,7 @@ cron.schedule('*/1 * * * *', async () => {
 
 async function scrapSportLine(url, sport, proxys){
 	// let proxy = newProxy(proxys);
-	const browser = await puppeteer.launch({headless: true, args: ['--no-sandbox'], ignoreDefaultArgs: ['--disable-extensions']});
+	const browser = await puppeteer.launch({headless: false, args: ['--no-sandbox'], ignoreDefaultArgs: ['--disable-extensions']});
 	const page = await browser.newPage();
 	process.on('unhandledRejection', (reason, p) => {
 	    // console.error('Unhandled Rejection at: Promise', p, 'reason:', reason);
@@ -125,9 +115,14 @@ async function scrapSportLine(url, sport, proxys){
 				messageId: '',
 				leage: '-',
 				url : 0,
+				sex : '',
 				players:[],
-				coefficient : 0,
+				coefficient: 0,
+				coefficient1 : 0,
+				coefficient2 : 0,
 				fora : 0,
+				fora1: 0,
+				fora2: 0,
 				total: 0
 			};
 			//Поиск времени начала
@@ -141,6 +136,15 @@ async function scrapSportLine(url, sport, proxys){
 			}
 
 			findEvent.leage = event.parentElement.querySelector('.line-champ__header-name a').innerHTML;
+			if(/Мужчины/.test(findEvent.leage)){
+				findEvent.sex = 'male'
+			}
+			else if(/Женщины/.test(findEvent.leage)){
+				findEvent.sex = 'female'
+			}
+			else{
+				findEvent.sex = 'male'
+			}
 			findEvent.url = 'https://betcityru.com' + event.querySelector('.line-event__name').getAttribute('href').replace(/\?.*/g, '');
 			findEvent.url = findEvent.url.replace(/line/g, 'live');
 			//Поиск имён команд
@@ -154,6 +158,8 @@ async function scrapSportLine(url, sport, proxys){
 			if(findEvent.fora < 0){
 				findEvent.fora = -findEvent.fora;
 			}
+			findEvent.fora1 = +fora[0].innerHTML;
+			findEvent.fora2 = +fora[1].innerHTML;
 			//Поиск Тотал
 			if(fora[2].innerHTML == ''){
 				findEvent.total = 0;
@@ -165,6 +171,8 @@ async function scrapSportLine(url, sport, proxys){
 			let coefficients = event.querySelectorAll('.line-event__main-bets-button_colored');
 			if(coefficients.length > 0 ){
 				
+				findEvent.coefficient1 = +coefficients[0].innerHTML;
+				findEvent.coefficient2 = +coefficients[1].innerHTML
 				findEvent.coefficient = +coefficients[0].innerHTML - +coefficients[1].innerHTML;
 				if(findEvent.coefficient < 0){
 					findEvent.coefficient = -findEvent.coefficient;
@@ -254,6 +262,9 @@ async function saveResultsLine(filter, result){
 			else if(event.total < filter.total[0] || event.fora > filter.total[1]){
 				error = true;
 			}
+			else if(event.sex != filter.sex){
+				error = true;
+			}
 			if(error == false){
 				let newEventLine = new EventLineItem(event);
 				await newEventLine.save();
@@ -261,7 +272,7 @@ async function saveResultsLine(filter, result){
 			}
 		}
 	})
-	return false;
+	return filter.sex;
 }
 
 
@@ -271,8 +282,10 @@ function sendTelegramLine(filter, event){
 
 		<strong>*${event.sport.toUpperCase()}*</strong>
 		<strong>*${event.leage}*</strong>
-		П1/П2 : ${event.coefficient}
-		Фора  : ${event.fora}
+		П1 : ${event.coefficient1}
+		П2 : ${event.coefficient2}
+		Ф1 : ${event.fora1}
+		Ф2 : ${event.fora2}
 		Тотал : ${event.total}
 
 		Фильтр: ${filter.name}
@@ -398,7 +411,7 @@ async function sendTelegramLive(event, filter, data){
 				Текущая фора:  ${data.currentFora}
 				Эйсы: ${data.ices}
 				Двойные ошибки: ${data.errorTwo}
-				% выигранных очков на первой подаче: __:__
+				% выигранных очков на первой подаче: ${data.supply}
 				Реализация брейкпоинтов: ${data.breaks}
 				Осталось набрать(Тотал): ${data.totalRemains}
 				Осталось набрать(Фора): ${data.foraRemains}
@@ -595,7 +608,7 @@ async function updateTelegramLive(event, filter, data){
 				Текущая фора:  ${data.currentFora}
 				Эйсы: ${data.ices}
 				Двойные ошибки: ${data.errorTwo}
-				% выигранных очков на первой подаче: __:__
+				% выигранных очков на первой подаче: ${data.supply}
 				Реализация брейкпоинтов: ${data.breaks}
 				Осталось набрать(Тотал): ${data.totalRemains}
 				Осталось набрать(Фора): ${data.foraRemains}
@@ -701,7 +714,7 @@ async function saveResultsLine(filter, result){
 
 
 async function scrapSportLive(events, filter){
-	const browser = await puppeteer.launch({headless: true, args: ['--no-sandbox'], ignoreDefaultArgs: ['--disable-extensions']});
+	const browser = await puppeteer.launch({headless: false, args: ['--no-sandbox'], ignoreDefaultArgs: ['--disable-extensions']});
 	let page = await browser.newPage();
 	process.on('unhandledRejection', (reason, p) => {
 	    // console.error('Unhandled Rejection at: Promise', p, 'reason:', reason);
@@ -860,12 +873,15 @@ async function scrapSportLivePage(event, browser, page){
 						let foraRemains = currentFora - (Math.max(+hits[0], +hits[1]) - Math.min(+hits[0], +hits[1]));
 						let foalsCommand = document.querySelectorAll('.scoreboard-content__foals');
 						let foals = [];
-						if(foalsCommand != null){
+						if(foalsCommand > 0){
 							foalsCommand.forEach(elem => {
 								foals.push(elem.querySelectorAll('.scoreboard-content__foals-item_active').length);
 							})
+							foals = foals.join(':');
 						}
-						foals = foals.join(':');
+						else{
+							foals = '0:0';
+						}
 						let time = document.querySelector('.scoreboard-content__info span');
 						if(time != null){
 							time = time.innerHTML
@@ -1074,6 +1090,20 @@ async function scrapSportLivePage(event, browser, page){
 							errorTwo = statItems[3].innerHTML + ':' + statItems[5].innerHTML; 
 							breaks = statItems[6].innerHTML + ':' + statItems[8].innerHTML; 	
 						}
+						let supply = document.querySelectorAll('.livestat-stats__list-item');
+
+						if(supply.length > 0){
+							supply.forEach(elem => {
+								if(elem.querySelector('.livestat-stats__list-item-name').innerHTML == '% выигр. очков на 1-й подаче'){
+									supply = elem.querySelectorAll('.livestat-stats__list-item-value');
+									supply = supply[0].innerHTML + ':' + supply[1].innerHTML;
+								} 
+							})
+						}
+						else{
+							supply = 'Нет информации'
+						}
+						livestat-stats__list-item
 						return {
 							operation: 'update',
 							data: {
@@ -1085,6 +1115,7 @@ async function scrapSportLivePage(event, browser, page){
 								ices: ices,
 								errorTwo: errorTwo,
 								breaks: breaks,
+								supply: supply,
 								totalRemains: totalRemainsVal,
 								foraRemains: foraRemains,
 								stopRate: false
@@ -1143,6 +1174,7 @@ let Filter = mongoose.Schema({
 	sport: String,
 	url: String,
 	chats: Array,
+	sex: String,
     difference: Array,
     fora: Array,
 	total: Array,
@@ -1174,9 +1206,14 @@ let EventLine = mongoose.Schema({
 	url: String,
 	sport: String,
 	leage: String,
+	sex: String,
 	players: Array,
-	coefficient : Number,
+	coefficient: Number,
+	coefficient1 : Number,
+	coefficient2 : Number,
 	fora : Number,
+	fora1: Number,
+	fora2: Number,
 	total: Number
 })
 
@@ -1259,7 +1296,7 @@ app.get('/channels', async (request, response) => {
 });
 app.get('/games', async (request, response) => {
 	console.log('games')
-	response.render('games', {games: await FinishEventItem.find().limit(30)});
+	response.render('games', {games: await FinishEventItem.find().sort({_id: -1}).limit(30)});
 });
 
 app.post('/saveFilter', jsonParser, async (request, response) => {
@@ -1272,14 +1309,16 @@ app.post('/saveFilter', jsonParser, async (request, response) => {
 	if(request.body.fora[1] == 0){
 		request.body.fora[1] = 10000;
 	}
-	// request.body.forEach(elem => {
-	// 	if(elem[0] == undefined){
-	// 		elem[0] = 0;
-	// 	}
-	// 	if(elem[1] == undefined){
-	// 		elem[1] = 10000;
-	// 	}
-	// })
+	for(key in request.body){
+		if(Array.isArray(request.body[key])){
+			if(request.body[key][0] == 0){
+				request.body[key][0] = 0;
+			}
+			if(request.body[key][1] == 0){
+				request.body[key][1] = 10000;
+			}
+		}
+	}
 	if(request.body.sport == 'none'){
 		request.body.status = 'inactive';
 	}
