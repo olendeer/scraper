@@ -51,7 +51,7 @@ const bot = new TelegramBot(TOKEN, {
 cron.schedule('*/1 * * * *', async () => {
 	// let proxys = await getProxy();
 	// console.log(proxys)
-	// console.log('Start scraper line')
+	console.log('Start scraper line')
 	// let countScraps = 0;
 	let filtersActive = await FilterItem.find({status: 'active'});
 	// // 	//Start scrape line
@@ -63,7 +63,7 @@ cron.schedule('*/1 * * * *', async () => {
 		})
 		
 	let startScrape = setTimeout(() => {
-	// // 	// console.log('Start scraper live events')
+	// 	console.log('Start scraper live events')
 		filtersActive.forEach(filter => {
 			EventLineItem.find({live: true, sport: filter.sport, fora: {$gte: filter.fora[0], $lte: filter.fora[1]}, total: {$gte: filter.total[0], $lte: filter.total[1]}, coefficient: {$gte: filter.difference[0], $lte: filter.difference[1]}})
 			.then(events => {
@@ -73,11 +73,11 @@ cron.schedule('*/1 * * * *', async () => {
 					})
 			})
 		})
-	// // 	// countScraps ++;
-	// // 	// if(countScraps == 5){
-	// // 	// 	console.log('Cron reload');
-	// // 	// 	clearInterval(startScrape)
-	// // 	// }
+	// // // 	// countScraps ++;
+	// // // 	// if(countScraps == 5){
+	// // // 	// 	console.log('Cron reload');
+	// // // 	// 	clearInterval(startScrape)
+	// // // 	// }
 	}, 15000);
 });
 
@@ -87,7 +87,7 @@ cron.schedule('*/1 * * * *', async () => {
 
 async function scrapSportLine(url, sport, proxys){
 	// let proxy = newProxy(proxys);
-	const browser = await puppeteer.launch({headless: false, args: ['--no-sandbox'], ignoreDefaultArgs: ['--disable-extensions']});
+	const browser = await puppeteer.launch({headless: true, args: ['--no-sandbox'], ignoreDefaultArgs: ['--disable-extensions']});
 	const page = await browser.newPage();
 	process.on('unhandledRejection', (reason, p) => {
 	    // console.error('Unhandled Rejection at: Promise', p, 'reason:', reason);
@@ -714,7 +714,7 @@ async function saveResultsLine(filter, result){
 
 
 async function scrapSportLive(events, filter){
-	const browser = await puppeteer.launch({headless: false, args: ['--no-sandbox'], ignoreDefaultArgs: ['--disable-extensions']});
+	const browser = await puppeteer.launch({headless: true, args: ['--no-sandbox'], ignoreDefaultArgs: ['--disable-extensions']});
 	let page = await browser.newPage();
 	process.on('unhandledRejection', (reason, p) => {
 	    // console.error('Unhandled Rejection at: Promise', p, 'reason:', reason);
@@ -725,7 +725,7 @@ async function scrapSportLive(events, filter){
 	for(event of events){
 		await scrapSportLivePage(event, browser, page)
 		.then( async result => {
-			// console.log(result.result.operation)
+			console.log(result.result.operation)
 			if(result.result.operation == 'delete'){
 				let finishEventItem = new FinishEventItem({
 					filter: filter.name,
@@ -1103,7 +1103,7 @@ async function scrapSportLivePage(event, browser, page){
 						else{
 							supply = 'Нет информации'
 						}
-						livestat-stats__list-item
+						// let supply = 'asd'
 						return {
 							operation: 'update',
 							data: {
