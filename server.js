@@ -54,7 +54,7 @@ cron.schedule('*/1 * * * *', async () => {
 	console.log('Start scraper line')
 	// let countScraps = 0;
 	let filtersActive = await FilterItem.find({status: 'active'});
-	// // 	//Start scrape line
+	//Start scrape line
 		filtersActive.forEach(filter => {
 			scrapSportLine(filter.url, filter.sport)
 			.then(result => {	
@@ -62,31 +62,30 @@ cron.schedule('*/1 * * * *', async () => {
 			})
 		})
 		
-	let startScrape = setTimeout(() => {
-	// 	console.log('Start scraper live events')
-		filtersActive.forEach(filter => {
-			EventLineItem.find({live: true, sport: filter.sport, fora: {$gte: filter.fora[0], $lte: filter.fora[1]}, total: {$gte: filter.total[0], $lte: filter.total[1]}, coefficient: {$gte: filter.difference[0], $lte: filter.difference[1]}})
-			.then(events => {
-					scrapSportLive(events, filter)
-					.then(result => {
-						// console.log(result)
-					})
-			})
-		})
-	// // // 	// countScraps ++;
-	// // // 	// if(countScraps == 5){
-	// // // 	// 	console.log('Cron reload');
-	// // // 	// 	clearInterval(startScrape)
-	// // // 	// }
-	}, 15000);
+	// let startScrape = setTimeout(() => {
+	// // 	console.log('Start scraper live events')
+	// 	filtersActive.forEach(filter => {
+	// 		EventLineItem.find({live: true, sport: filter.sport, fora: {$gte: filter.fora[0], $lte: filter.fora[1]}, total: {$gte: filter.total[0], $lte: filter.total[1]}, coefficient: {$gte: filter.difference[0], $lte: filter.difference[1]}})
+	// 		.then(events => {
+	// 				scrapSportLive(events, filter)
+	// 				.then(result => {
+	// 					// console.log(result)
+	// 				})
+	// 		})
+	// 	})
+	// // // // 	// countScraps ++;
+	// // // // 	// if(countScraps == 5){
+	// // // // 	// 	console.log('Cron reload');
+	// // // // 	// 	clearInterval(startScrape)
+	// // // // 	// }
+	// }, 15000);
 });
 
 
 
 
 
-async function scrapSportLine(url, sport, proxys){
-	// let proxy = newProxy(proxys);
+async function scrapSportLine(url, sport){
 	const browser = await puppeteer.launch({headless: true, args: ['--no-sandbox'], ignoreDefaultArgs: ['--disable-extensions']});
 	const page = await browser.newPage();
 	process.on('unhandledRejection', (reason, p) => {
@@ -100,7 +99,7 @@ async function scrapSportLine(url, sport, proxys){
 		// scrapSportLine(url, sport, proxys)
 		browser.close();
 	})
-	await page.waitFor(5000);
+	await page.waitForSelector('app-line-event-unit', {timeout: 5000});
 	let result = await page.evaluate(() => {
 		let findEvents = [];
 		let events = document.querySelectorAll('app-line-event-unit');
@@ -272,7 +271,7 @@ async function saveResultsLine(filter, result){
 			}
 		}
 	})
-	return filter.sex;
+	return false;
 }
 
 
@@ -684,37 +683,8 @@ app.set('view engine', 'ejs');
 app.use(express.static('public'));
 
 
-
-async function saveResultsLine(filter, result){
-	let error = false;
-	result.forEach(async event => {
-		let findEventLine =  await EventLineItem.findOne({url: event.url});
-		if(findEventLine == null){
-			error = false;
-			if(event.coefficient < filter.difference[0] || event.coefficient > filter.difference[1]){
-				error = true;
-			}
-			else if(event.fora < filter.fora[0] || event.fora > filter.fora[1]){
-				error = true;
-			}
-			else if(event.total < filter.total[0] || event.fora > filter.total[1]){
-				error = true;
-			}
-			if(error == false){
-				let newEventLine = new EventLineItem(event);
-				await newEventLine.save();
-				sendTelegramLine(filter, event);
-			}
-		}
-		else{
-		}	
-	})
-	return false;
-}
-
-
 async function scrapSportLive(events, filter){
-	const browser = await puppeteer.launch({headless: true, args: ['--no-sandbox'], ignoreDefaultArgs: ['--disable-extensions']});
+	const browser = await puppeteer.launch({headless: false, args: ['--no-sandbox'], ignoreDefaultArgs: ['--disable-extensions']});
 	let page = await browser.newPage();
 	process.on('unhandledRejection', (reason, p) => {
 	    // console.error('Unhandled Rejection at: Promise', p, 'reason:', reason);
