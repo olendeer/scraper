@@ -684,7 +684,7 @@ app.use(express.static('public'));
 
 
 async function scrapSportLive(events, filter){
-	const browser = await puppeteer.launch({headless: true, ignoreDefaultArgs: ['--disable-extensions']});
+	const browser = await puppeteer.launch({headless: false, ignoreDefaultArgs: ['--disable-extensions']});
 	let page = await browser.newPage();
 	process.on('unhandledRejection', (reason, p) => {
 	    // console.error('Unhandled Rejection at: Promise', p, 'reason:', reason);
