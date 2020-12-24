@@ -9,7 +9,7 @@
   "author": "oledneer",
   "license": "ISC",
   "dependencies": {
-    "date-and-time": "^0.13.1",
+    "date-and-time": "^0.14.2",
     "ejs": "^3.0.2",
     "express": "^4.17.1",
     "mongoose": "^5.9.10",
